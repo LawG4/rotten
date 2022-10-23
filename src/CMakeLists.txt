@@ -17,3 +17,4 @@ set(rotten_projects
 foreach(project ${rotten_projects})
 	add_subdirectory(${project})
 endforeach()
+

@@ -10,28 +10,18 @@
 ############################################################################
 cmake_minimum_required(VERSION 3.16.0 FATAL_ERROR)
 
-# Check that this project should be added, when the project is enabled and 
-# hasn't already been added by another project
-if(TARGET rotten-retro-gfx-examples OR NOT ${ROTTEN_PROJECT_RETRO_GFX_EXAMPLES})
+# Since these are examples, if the user has switched off the examples option
+# exit out of any attempts to add this directory. If the rotten_retro_target
+# is not defined by cmake then we're on desktop and which samples are added 
+# is decided by which simulation layers are added
+if(NOT DEFINED rotten_retro_target OR NOT ROTTEN_PROJECT_EXAMPLES)
 	return()
 endif()
-add_library(rotten-retro-gfx-examples INTERFACE)
-message(STATUS "Adding rotten retro gfx examples")
 
-# Defining the rotten retro string is what is used to differentiate which 
-# retro platform is being used. It is used in every toolchain file added by 
-# rotten. If it not defined then assume desktop
-if(NOT DEFINED rotten_retro_target)
-	add_subdirectory(../rotten-retro-gfx-sim sim)
-	add_subdirectory(src/gx-wii)
+# Now we know that the rotten retro target has been defined and the examples
+# option is switched on, so add in the corrosponding platforms examples
+if(${rotten_retro_target} STREQUAL "WII" OR ${rotten_retro_target} STREQUAL "CUBE")
+	add_subdirectory(src/gekko)
 else()
-
-	# Select the correct rotten retro platform
-	if(${rotten_retro_target} STREQUAL "WII")
-		add_subdirectory(src/gx-wii)
-	else()
-		message(FATAL_ERROR "Unknown retro target \"${rotten_retro_target}\"")
-	endif()
-
+	message(FATAL_ERROR "Unknown retro target \"${rotten_retro_target}\"")
 endif()
-

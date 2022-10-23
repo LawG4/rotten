@@ -8,10 +8,12 @@
 ############################################################################
 cmake_minimum_required(VERSION 3.16.0 FATAL_ERROR)
 
-# Check that this project should be added, when the project is enabled and 
-# hasn't already been added by another project
-if(TARGET rotten-retro-gfx-sim OR NOT ${ROTTEN_PROJECT_RETRO_GFX_SIM})
+# When rotten_retro_target is defined as a cmake variable then we don't build
+# any of the simuation layers. When this cmake variable is not defined then 
+# we add all of the subdirectories, and let the project option decide.
+if(DEFINED rotten_retro_target)
 	return()
 endif()
 
-add_library(rotten-retro-gfx-sim INTERFACE)
+# Add in the Wii/Gamecube simulation layer
+add_subdirectory(src/gekko)
