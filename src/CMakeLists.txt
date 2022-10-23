@@ -9,6 +9,7 @@
 ############################################################################
 
 set(rotten_projects
+	rotten-core
 	rotten-gfx
 	rotten-gfx-vk
 	rotten-retro-gfx-examples
