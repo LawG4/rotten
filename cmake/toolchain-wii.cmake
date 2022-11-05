@@ -23,8 +23,11 @@ set(ROTTEN_PROJECT_RETRO_GFX_SIM OFF CACHE BOOL "Build the rotten graphics simul
 # absolute paths for rotten's cmake
 include("${CMAKE_CURRENT_LIST_DIR}/toolchain-common.cmake")
 
-# Tell Rotten build system we're building for the wii
-set(rotten_retro_target "WII" CACHE STRING "Target platform being built for")
+# Tell Rotten build system we're building for either the wii or the gamecube
+# The rotten_retro_target string has to match the folder structure. So we'll 
+# define an extra cmake variable called rotten_retro_enable_wii
+set(rotten_retro_target "gekko" CACHE STRING "Target platform being built for")
+set(rotten_retro_enable_wii TRUE CACHE BOOL "Enable wii builds for gekko targets")
 
 # Visual studio doesn't like wii dev toolchain
 rotten_no_visual_studio()

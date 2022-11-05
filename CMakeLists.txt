@@ -14,6 +14,14 @@ endif()
 project(rotten-monorepo VERSION 0.0.1 LANGUAGES C)
 add_library(rotten INTERFACE)
 
+# Add in all the cmake module paths and functions used by rotten 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+include(rotten-common)
+
+# Make the cmake predefined targets like ALL_BUILD and ZERO_CHECK into a folder
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "_CMakePredefinedTargets")
+
 message("Rotten monorepo build system")
 message("Target : ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR}")
 message("Host   : ${CMAKE_HOST_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_PROCESSOR}")
@@ -22,15 +30,7 @@ message("Host   : ${CMAKE_HOST_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 option(ROTTEN_PROJECT_EXAMPLES "Build the rotten examples for all projecsts" ON)
 option(ROTTEN_PROJECT_GFX      "Build the rotten graphics abstraction layer" ON)
 option(ROTTEN_PROJECT_GFX_VK   "Build the rotten graphics vulkan helpers" ON)
-
-# Which graphics retro simulators to build - None of them will build when the
-# rotten_retro_target cmake variable is defined because you're targetting native
-# retro machines / emulators and not a desktop.
-option(ROTTEN_PROJECT_RETRO_GFX_SIM_WII  "Build the graphics simulators for wii" ON)
-option(ROTTEN_PROJECT_RETRO_GFX_SIM_CUBE "Build the graphics simulators for gamecube" ON)
-if(${ROTTEN_PROJECT_RETRO_GFX_SIM_CUBE} OR ${ROTTEN_PROJECT_RETRO_GFX_SIM_WII})
-	set(ROTTEN_PROJECT_RETRO_GFX_SIM_GEKKO ON CACHE BOOL "Build either wii or gamecube sim")
-endif()
+option(ROTTEN_PROJECT_RETRO    "Build the rotten retro targets" ON)
 
 # Enable the compile commands.json to be automatically generated
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "" FORCE)
