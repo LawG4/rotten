@@ -5,12 +5,17 @@
 # Copyrite : Rotten
 # Authors  : Lawrence G,
 ############################################################################
+cmake_minimum_required(VERSION 3.16.0 FATAL_ERROR)
 
 # Whenever this file is included, add the directory containing it to the 
 # CMake module path, that makes it waaaay easier for users to include any
 # of the other cmake tools provided by rotten
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} CACHE INTERNAL "")
+
+# include all the other common cmakes
+include(rotten-group-sources)
+
 
 # Sometimes programs on cmake won't work if they don't have a .exe file 
 # suffix, I'm gonna add a function to do that automatically
