@@ -1,6 +1,8 @@
-#include "gccore.h"
 #include <malloc.h>
+#include <stdbool.h>
 #include <string.h>
+
+#include "gccore.h"
 
 #define FIFO_SIZE (256 * 1024)
 
@@ -55,12 +57,12 @@ int main()
     // framebuffer, we might be copying garbage
     GXColor clear_color = {50, 50, 50, 0xff};
     GX_SetCopyClear(clear_color, 0x00ffffff);
-    GX_CopyDisp(framebuffers[frame_index], GX_TRUE);
-    GX_CopyDisp(framebuffers[frame_index], GX_TRUE);
+    GX_CopyDisp(framebuffers[frame_index], true);
+    GX_CopyDisp(framebuffers[frame_index], true);
 
     // We know know that the next frame buffer has a good clear value, so stop blacking out the video output
     // port. This prevents us from displaying whatever was in the ram on boot.
-    VIDEO_SetBlack(FALSE);
+    VIDEO_SetBlack(false);
     VIDEO_Flush();
 
     while (1) {
@@ -73,7 +75,7 @@ int main()
         // Copy the current embedded framebuffer out to the framebuffer about to be displayed, while clearing
         // the embedded framebuffer to the value we just set
         frame_index = !frame_index;
-        GX_CopyDisp(framebuffers[frame_index], GX_TRUE);
+        GX_CopyDisp(framebuffers[frame_index], true);
 
         // Tell the video output system where the next framebuffer is going to be, flush those changes out to
         // the video hardware, and wait for the next VSync to take place, once that has happend the video

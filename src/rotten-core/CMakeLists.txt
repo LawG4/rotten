@@ -26,7 +26,7 @@ target_include_directories(rotten-core PUBLIC
 	${CMAKE_CURRENT_LIST_DIR}/../../inc/rotten)
 
 set_target_properties(rotten-core PROPERTIES LINKER_LANGUAGE C)
-
+rotten_group_sources(rotten-core "rotten")
 if(${ROTTEN_PROJECT_EXAMPLES})
 	add_subdirectory(src/examples)
 endif()

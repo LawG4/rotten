@@ -14,19 +14,21 @@ if(TARGET gekko-01-clear-color)
 endif()
 
 # Add all the examples
-add_executable(gekko-01-clear-color 01-clear-color/clear-color.c)
+message(STATUS "Adding rotten retro gekko : examples")
+add_executable(rotten-retro-gekko-01-clear-color 01-clear-color/clear-color.c)
 
 # On Native Wii builds the devkitPro toolchain has automatically  added all
 # the compilation flags, linker flags and include directories. So we only 
 # need to wory about adding the simulation layer on desktop builds.
 if(NOT DEFINED rotten_retro_target)
-	add_subdirectory(../../../rotten-retro-gfx-sim/src/gekko gfx-sim)
+	add_subdirectory(../../ rotten-gekko)
 
 	set(gekko_examples 
-		gekko-01-clear-color)
+		rotten-retro-gekko-01-clear-color)
 
 	foreach(example ${gekko_examples})
 		target_link_libraries(${example} PRIVATE rotten-retro-gfx-sim-gekko)
+		set_target_properties(${example} PROPERTIES FOLDER "rotten/examples")
 	endforeach()
 
 endif()

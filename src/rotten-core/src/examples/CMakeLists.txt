@@ -11,13 +11,14 @@ if(TARGET 01-rotten-core-log-c)
 endif()
 
 project(rotten-core-examples VERSION 0.1.0 LANGUAGES CXX C)
-add_executable(01-rotten-core-log-c 01-rotten-log/rotten-log.c)
-add_executable(01-rotten-core-log-cpp 01-rotten-log/rotten-log.cpp)
+add_executable(rotten-core-01-log-c 01-rotten-log/rotten-log.c)
+add_executable(rotten-core-01-log-cpp 01-rotten-log/rotten-log.cpp)
 
 set(examples 
-	01-rotten-core-log-c
-	01-rotten-core-log-cpp)
+	rotten-core-01-log-c
+	rotten-core-01-log-cpp)
 
 foreach(example ${examples})
 	target_link_libraries(${example} PRIVATE rotten-core)
+	set_target_properties(${example} PROPERTIES FOLDER "rotten/examples")
 endforeach()
