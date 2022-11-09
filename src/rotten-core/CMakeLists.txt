@@ -17,16 +17,23 @@ endif()
 project(rotten-core VERSION 0.1.0 LANGUAGES C)
 message(STATUS "Adding rotten core")
 add_library(rotten-core
-	${CMAKE_CURRENT_LIST_DIR}/../../inc/rotten/rotten-core.h
-	${CMAKE_CURRENT_LIST_DIR}/../../inc/rotten/rotten-enum.h
-	${CMAKE_CURRENT_LIST_DIR}/src/rotten-core-internal.h
-	${CMAKE_CURRENT_LIST_DIR}/src/log.c)
+	${CMAKE_CURRENT_LIST_DIR}/rotten-core-internal.h
+	${CMAKE_CURRENT_LIST_DIR}/utils/log.c)
 
 target_include_directories(rotten-core PUBLIC 
 	${CMAKE_CURRENT_LIST_DIR}/../../inc/rotten)
 
+# Group and link all the projects together, including the public headers
+# Which by design are handled in a different way than the regular source
+
 set_target_properties(rotten-core PROPERTIES LINKER_LANGUAGE C)
 rotten_group_sources(rotten-core "rotten")
+set(public_headers 
+	rotten-core.h
+	rotten-enum.h)
+rotten_add_public_headers(rotten-core "${public_headers}")
+
+# Add the examples
 if(${ROTTEN_PROJECT_EXAMPLES})
-	add_subdirectory(src/examples)
+	add_subdirectory(examples)
 endif()

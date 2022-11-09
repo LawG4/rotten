@@ -7,7 +7,7 @@
  */
 
 #include <stdio.h>
-#include "../../../../../inc/rotten/rotten-core.h"
+#include "../../../../inc/rotten/rotten-core.h"
 
 void example_log(const char* msg, rotten_log_level level)
 {
