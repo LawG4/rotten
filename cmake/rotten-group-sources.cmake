@@ -32,21 +32,33 @@ function(rotten_group_sources target_name folder_path)
 	get_target_property(target_sources ${target_name} SOURCES)
 	get_target_property(rotten_root_dir rotten SOURCE_DIR)
 
-
-	# Iterate over all of the sources so they can be placed into the right 
-	# source group by parsing the file path 
+	# Iterate over all of the sources 
 	foreach(source ${target_sources})
-		# Find file path local to the cmake list folder
-		file(RELATIVE_PATH relative_source ${target_root_dir} ${source})
 		
-		# If it begins with the src folder then we can add it directly 
-		# else we asume it starts with ../ and refers to the include files
-		if(${relative_source} MATCHES "^src/")
-			source_group(TREE "${target_root_dir}/src" PREFIX source FILES ${source})
-		else()
-			source_group(TREE "${rotten_root_dir}/inc/rotten" PREFIX "public-include" FILES ${source})
+		# If the path is relative, then make it absolute
+		if(NOT IS_ABSOLUTE ${source})
+			set(source ${target_root_dir}/${source})
 		endif()
+		# Actually group the files
+		source_group(TREE "${target_root_dir}" PREFIX source FILES ${source})
 		
 	endforeach()
 
+endfunction()
+
+# The headers take such an seperate direction from the rest of the source files so 
+# we make sure to add them seperatley, this way the ide can still group them without 
+# too much hassle from us trying to sort everything int src folders etc..
+function(rotten_add_public_headers target_name sources)
+	# Use the interface library at the root of the repository to get the path there 
+	get_target_property(rotten_root_dir rotten SOURCE_DIR)
+
+	# Group them all into the same folder, requires the user gives the path relative
+	# to /include/rotten
+	foreach(source ${sources})
+		set(full_source ${rotten_root_dir}/inc/rotten/${source})
+		target_sources(${target_name} PRIVATE ${full_source})
+		source_group(TREE "${rotten_root_dir}/inc/rotten" PREFIX "public-include" 
+			FILES ${full_source})
+	endforeach()
 endfunction()
