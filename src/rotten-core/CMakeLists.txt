@@ -25,8 +25,6 @@ target_include_directories(rotten-core PUBLIC
 
 # Group and link all the projects together, including the public headers
 # Which by design are handled in a different way than the regular source
-
-set_target_properties(rotten-core PROPERTIES LINKER_LANGUAGE C)
 rotten_group_sources(rotten-core "rotten")
 set(public_headers 
 	rotten-core.h

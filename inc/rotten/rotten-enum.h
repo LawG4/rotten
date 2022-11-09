@@ -18,4 +18,10 @@ typedef enum rotten_log_level {
     e_rotten_log_warning = 2,
     e_rotten_log_error = 3
 } rotten_log_level;
+
+typedef enum rotten_vk_features {
+    e_rotten_vkf_none = 0,
+    e_rotten_vkf_presenting = 1 << 0,  // The device can display to the screen
+
+} rotten_vk_features;
 #endif  // !__ROTTEN_ENUM_EXTERNAL_H__

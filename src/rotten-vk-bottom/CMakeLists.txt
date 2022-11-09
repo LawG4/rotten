@@ -21,11 +21,14 @@ add_subdirectory(../rotten-core core)
 
 # Define the source files which make up the library
 add_library(rotten-vk-bottom
+	rotten-vk-bottom-internal.h
 	${CMAKE_CURRENT_LIST_DIR}/startup/instance.c)
 
 # Link the rotten dependencies
+target_link_libraries(rotten-vk-bottom PRIVATE rotten-core)
 rotten_group_sources(rotten-vk-bottom rotten)
-target_link_libraries(rotten-vk-bottom PUBLIC rotten_core)
+rotten_add_public_headers(rotten-vk-bottom "rotten-vk-bottom.h")
+target_include_directories(rotten-vk-bottom PUBLIC "${CMAKE_CURRENT_LIST_DIR}/../../inc/")
 
 # TODO : Remove this 
 # Find and link to the external dependencies 
@@ -35,3 +38,8 @@ target_link_libraries(rotten-vk-bottom PUBLIC rotten_core)
 find_package(Vulkan QUIET REQUIRED) 
 target_link_libraries(rotten-vk-bottom PUBLIC ${Vulkan_LIBRARIES})
 target_include_directories(rotten-vk-bottom PUBLIC ${Vulkan_INCLUDE_DIRS})
+
+# Add the examples 
+if(${ROTTEN_PROJECT_EXAMPLES})
+	add_subdirectory(examples)
+endif()
