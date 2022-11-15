@@ -10,7 +10,11 @@
 #ifndef __ROTTEN_ENUM_EXTERNAL_H__
 #define __ROTTEN_ENUM_EXTERNAL_H__ (1)
 
-typedef enum rotten_success_code { e_rotten_success = 0 } rotten_success_code;
+typedef enum rotten_success_code {
+    e_rotten_success = 0,
+    e_rotten_unclassified_error = 1,
+    e_rotten_library_not_present = 2
+} rotten_success_code;
 
 typedef enum rotten_log_level {
     e_rotten_log_verbose = 0,

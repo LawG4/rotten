@@ -28,3 +28,4 @@ add_library(rotten-vk-top
 # Link the dependencies 
 rotten_group_sources(rotten-vk-top rotten)
 target_link_libraries(rotten-vk-top PUBLIC rotten-vk-bottom)
+rotten_add_public_headers(rotten-vk-top "rotten-vk-top.h")

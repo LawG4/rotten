@@ -16,16 +16,18 @@ endif()
 project(rotten-vk-bottom VERSION 0.1.0 LANGUAGES C)
 message(STATUS "Adding rotten vulkan bottom level")
 
-# Add rotten core as a dependency - for debug logging etc
-add_subdirectory(../rotten-core core)
-
 # Define the source files which make up the library
 add_library(rotten-vk-bottom
 	rotten-vk-bottom-internal.h
 	${CMAKE_CURRENT_LIST_DIR}/startup/instance.c)
 
-# Link the rotten dependencies
+# Find all of the depenencies required by this project
+add_subdirectory(../rotten-core core)
+add_subdirectory(../rotten-vk-runtime runtime)
 target_link_libraries(rotten-vk-bottom PRIVATE rotten-core)
+target_link_libraries(rotten-vk-bottom PUBLIC rotten-vk-runtime)
+
+# Sort the files and add the public headers into the project 
 rotten_group_sources(rotten-vk-bottom rotten)
 rotten_add_public_headers(rotten-vk-bottom "rotten-vk-bottom.h")
 target_include_directories(rotten-vk-bottom PUBLIC "${CMAKE_CURRENT_LIST_DIR}/../../inc/")
