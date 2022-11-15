@@ -27,10 +27,12 @@ message("Target : ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR}")
 message("Host   : ${CMAKE_HOST_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 
 # Allow the users to configure which rotten projects are built
-option(ROTTEN_PROJECT_EXAMPLES "Build the rotten examples for all projecsts" ON)
-option(ROTTEN_PROJECT_GFX      "Build the rotten graphics abstraction layer" ON)
-option(ROTTEN_PROJECT_GFX_VK   "Build the rotten graphics vulkan helpers" ON)
-option(ROTTEN_PROJECT_RETRO    "Build the rotten retro targets" ON)
+option(ROTTEN_PROJECT_EXAMPLES   "Build the rotten examples for all projecsts" ON)
+option(ROTTEN_PROJECT_GFX        "Build the rotten graphics abstraction layer" ON)
+option(ROTTEN_PROJECT_RETRO      "Build the rotten retro targets" ON)
+option(ROTTEN_PROJECT_VK_BOTTOM  "Build the rotten vulkan low level helpers" ON)
+option(ROTTEN_PROJECT_VK_RUNTIME "Build the rotten vulkan runtime loader" ON)
+option(ROTTEN_PROJECT_VK_TOP     "Build the rotten vulkan high level helpers" ON)
 option(ROTTEN_PROJECT_WINDOW   "Build the rotten windowing system abstraction" ON)
 
 # Enable the compile commands.json to be automatically generated

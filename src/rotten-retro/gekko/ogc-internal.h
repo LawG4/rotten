@@ -7,6 +7,6 @@
  */
 #ifndef __ROTTEN_RETRO_GEKKO_INTERNAL_H__
 #define __ROTTEN_RETRO_GEKKO_INTERNAL_H__
-#include "../../../../../inc/rotten/rotten-retro-gfx-sim/gekko/gccore.h"
+#include "../../../inc/rotten/rotten-retro/gekko/gccore.h"
 
 #endif  // !__ROTTEN_RETRO_GEKKO_INTERNAL_H__

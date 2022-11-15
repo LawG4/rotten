@@ -27,7 +27,7 @@ if(NOT DEFINED rotten_retro_target)
 		rotten-retro-gekko-01-clear-color)
 
 	foreach(example ${gekko_examples})
-		target_link_libraries(${example} PRIVATE rotten-retro-gfx-sim-gekko)
+		target_link_libraries(${example} PRIVATE rotten-retro-gekko-sim)
 		set_target_properties(${example} PROPERTIES FOLDER "rotten/examples")
 	endforeach()
 

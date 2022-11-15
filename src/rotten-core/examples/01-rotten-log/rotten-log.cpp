@@ -6,7 +6,7 @@
  * Authors   : Lawrence G,
  */
 #include <iostream>
-#include "../../../../../inc/rotten/rotten-core.h"
+#include "../../../../inc/rotten/rotten-core.h"
 
 int main()
 {

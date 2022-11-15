@@ -11,8 +11,10 @@
 set(rotten_projects
 	rotten-core
 	rotten-gfx
-	rotten-gfx-vk
 	rotten-retro
+	rotten-vk-bottom
+	rotten-vk-runtime
+	rotten-vk-top
 	rotten-window)
 
 foreach(project ${rotten_projects})

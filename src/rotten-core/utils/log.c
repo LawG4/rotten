@@ -7,7 +7,7 @@
  * Authors   : Lawrence G,
  */
 #include <stdlib.h>
-#include "rotten-core-internal.h"
+#include "../rotten-core-internal.h"
 static rotten_log_function s_internal_logger = NULL;
 
 void rotten_log_set_callback(rotten_log_function callback)
