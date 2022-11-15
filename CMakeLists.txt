@@ -31,9 +31,10 @@ option(ROTTEN_PROJECT_EXAMPLES "Build the rotten examples for all projecsts" ON)
 option(ROTTEN_PROJECT_GFX      "Build the rotten graphics abstraction layer" ON)
 option(ROTTEN_PROJECT_GFX_VK   "Build the rotten graphics vulkan helpers" ON)
 option(ROTTEN_PROJECT_RETRO    "Build the rotten retro targets" ON)
+option(ROTTEN_PROJECT_WINDOW   "Build the rotten windowing system abstraction" ON)
 
 # Enable the compile commands.json to be automatically generated
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "" FORCE)
 
 # Jump into the source directory to add in all of the different subprojects
-add_subdirectory(src)
+add_subdirectory(src) 
