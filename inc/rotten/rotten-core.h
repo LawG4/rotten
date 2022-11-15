@@ -9,6 +9,7 @@
  */
 #ifndef __ROTTEN_EXTERNAL_CORE_H__
 #define __ROTTEN_EXTERNAL_CORE_H__ (1)
+#include <stdint.h>
 #include "rotten-enum.h"
 
 // Cpp header guards, so that cpp projects can use our c libraries
