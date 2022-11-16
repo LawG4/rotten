@@ -9,6 +9,7 @@
  ************************************************************************************************************/
 #ifndef __ROTTEN_EXTERNAL_CORE_H__
 #define __ROTTEN_EXTERNAL_CORE_H__ (1)
+#include <stddef.h>
 #include <stdint.h>
 #include "rotten-enum.h"
 
