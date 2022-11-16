@@ -11,6 +11,7 @@ if(TARGET rotten-vk-bottom-01-hello-instance-c)
 endif() 
 message(STATUS "Adding rotten vk bottom : examples")
 
+project(rotten-vk-bottom-examples VERSION 0.1.0 LANGUAGES CXX C)
 add_executable(rotten-vk-bottom-01-hello-instance-c 01-hello-instance/instance.c)
 add_executable(rotten-vk-bottom-01-hello-instance-cpp 01-hello-instance/instance.cpp)
 
