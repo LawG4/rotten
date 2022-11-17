@@ -25,7 +25,7 @@ typedef struct wayland_dispatch {
  * @param window Pointer to the window to hande the
  * @returns success code, success only if wayland is the chosen window backend
  */
-rotten_success_code connect_test_wayland(rotten_window* window);
+rotten_success_code connect_test_wayland(rotten_window_connection* connection);
 #endif
 
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
@@ -40,7 +40,7 @@ typedef struct xcb_dispatch {
     xcb_connection_t* (*connect)(const char* display_name, int* p_screen_num);
 } xcb_dispatch;
 
-rotten_success_code connect_test_xcb(rotten_window* window);
+rotten_success_code connect_test_xcb(rotten_window_connection* connection);
 #endif
 
 // For allowing the user to dynamically open the display server libraries

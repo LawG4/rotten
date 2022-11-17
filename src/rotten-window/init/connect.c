@@ -1,9 +1,33 @@
 #include "../rotten-window-internal.h"
 
-rotten_success_code rotten_window_connect(rotten_window* window)
+//
+// Define the static handles for the different windowing systems
+// Ideally, I'd like these to stay internal. ensure to set the handles to nullpointers
+//
+#ifdef __linux__
+
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+static wayland_dispatch s_wl = {
+  .wayland_handle = NULL,  // linux native shared lib handle
+  .display_connect = NULL  //
+};
+#endif  //! Wayland
+
+#ifndef ROTTEN_WINDOW_EXCLUDE_XCB
+static xcb_dispatch s_xcb = {
+  .libary_handle = NULL,  // linux native shared lib handle
+  .connect = NULL         //
+};
+#endif  //! XCB
+
+#endif  //! linux
+
+rotten_success_code rotten_window_connect(rotten_window_connection* connection)
 {
     // This section is about setting the window backend flag. so we have to clear it first
-    window->supported_window_backends = 0;
+    connection->supported_window_backends = 0;
+    connection->selected_backend = e_rotten_window_none;
+    connection->backend_handle = NULL;
 
 #ifdef __linux__
 
@@ -12,14 +36,26 @@ rotten_success_code rotten_window_connect(rotten_window* window)
 
 // Attempt to connect to wayland display server
 #ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
-    if (connect_test_wayland(window) == e_rotten_success)
-        window->supported_window_backends |= e_rotten_window_wayland;
+    if (connect_test_wayland(connection) == e_rotten_success) {
+        connection->supported_window_backends |= e_rotten_window_wayland;
+
+        // by default prefer wayland
+        connection->selected_backend = e_rotten_window_wayland;
+        connection->backend_handle = &s_wl;
+    }
 #endif  // ! Wayland connect
 
 // Attempt to connect to XCB display server
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
-    if (connect_test_xcb(window) == e_rotten_success)
-        window->supported_window_backends |= e_rotten_window_xcb;
+    if (connect_test_xcb(connection) == e_rotten_success) {
+        connection->supported_window_backends |= e_rotten_window_xcb;
+
+        // Set the default to backend to XCB only if wayland hasn't already been selected
+        if (connection->selected_backend == e_rotten_window_none) {
+            connection->selected_backend = e_rotten_window_xcb;
+            connection->backend_handle = &s_xcb;
+        }
+    }
 #endif  // ! XCB connect
 
 #else
@@ -28,11 +64,13 @@ rotten_success_code rotten_window_connect(rotten_window* window)
 #endif  // ! End of OS specific
 
     // Check that at least one of the window connections was enabled
-    if (window->supported_window_backends == 0) {
+    if (connection->supported_window_backends == 0 || connection->backend_handle == NULL ||
+        connection->selected_backend == e_rotten_window_none) {
         rotten_log("No supported window backend were found", e_rotten_log_error);
         return e_rotten_library_not_present;
     }
 
+    // Got this far so everything was all good.
     return e_rotten_success;
 }
 
@@ -40,14 +78,9 @@ rotten_success_code rotten_window_connect(rotten_window* window)
 // Implementation specific functions
 //
 
-// Linux
 #ifdef __linux__
-
 #ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
-
-static wayland_dispatch s_wl = {.wayland_handle = NULL, .display_connect = NULL};
-
-rotten_success_code connect_test_wayland(rotten_window* window)
+rotten_success_code connect_test_wayland(rotten_window_connection* connection)
 {
     // Has the client library on this computer been opened yet?
     if (s_wl.wayland_handle == NULL) {
@@ -113,14 +146,10 @@ rotten_success_code connect_test_wayland(rotten_window* window)
 
     return e_rotten_success;
 }
-
 #endif  // ! Wayland
 
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
-
-static xcb_dispatch s_xcb = {.libary_handle = NULL, .connect = NULL};
-
-rotten_success_code connect_test_xcb(rotten_window* window)
+rotten_success_code connect_test_xcb(rotten_window_connection* connection)
 {
     // Same as above try to open the dynamic library for xcb on the host machine
     if (s_xcb.libary_handle == NULL) {
@@ -168,7 +197,5 @@ rotten_success_code connect_test_xcb(rotten_window* window)
     rotten_log("Successfully opened xcb connection", e_rotten_log_info);
     return e_rotten_success;
 }
-
 #endif  // ! XCB
-
 #endif  // ! __linux__
