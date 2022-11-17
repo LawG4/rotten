@@ -15,7 +15,9 @@ project(rotten-window VERSION 0.1.0 LANGUAGES C)
 message(STATUS "Adding rotten window")
 add_library(rotten-window 
 	${CMAKE_CURRENT_LIST_DIR}/../../inc/rotten/rotten-window.h
-	init/connect.c)
+	init/connect.c
+	init/window-init.c
+	events/poll.c)
 
 # Add in rotten core
 add_subdirectory(../rotten-core core)

@@ -2,8 +2,23 @@
 #ifndef __ROTTEN_INTERNAL_WINDOW_SHARED_H__
 #define __ROTTEN_INTERNAL_WINDOW_SHARED_H__ (1)
 
-#ifdef __linux__
+//
+// The internal window always has the first member being the backend type, that way the pointer can be casted
+// into a baseline struct, and then that can be used to select the correct function path ways
+//
+typedef struct rotten_window_base {
+    rotten_window_backend backend;
+    uint8_t remain_open;
+    uint32_t width;
+    uint32_t height;
+    char* title;
+} rotten_window_base;
 
+//
+// Per OS configuration for the header
+//
+
+#ifdef __linux__
 // On linux there are multiple common different display servers. And the user might not want to build for all
 // of them. So we give them the ability to exclude each one individually
 #ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
@@ -34,13 +49,33 @@ rotten_success_code connect_test_wayland(rotten_window_connection* connection);
 
 typedef struct xcb_dispatch {
     void* libary_handle;
-    xcb_connection_t* connection_t;
+    xcb_connection_t* connection_t;  // connection handle
+    xcb_screen_t* screen_t;          // information about the root window
 
     // Function pointers
     xcb_connection_t* (*connect)(const char* display_name, int* p_screen_num);
+    const struct xcb_setup_t* (*get_setup)(xcb_connection_t* connection);
+    xcb_screen_iterator_t (*setup_roots_iterator)(const xcb_setup_t* root_setup);
+
+    xcb_window_t (*generate_id)(xcb_connection_t* xcb_connection);
+    xcb_void_cookie_t (*create_window)(xcb_connection_t* connection, uint8_t depth, xcb_window_t window_id,
+                                       xcb_window_t parent_window_id, int16_t xpos, int16_t ypos,
+                                       uint16_t width, uint16_t height, uint16_t border_width, uint16_t class,
+                                       xcb_visualid_t visual, uint32_t value_mask,
+                                       const uint32_t* value_list);
+    xcb_void_cookie_t (*map_window)(xcb_connection_t* connection, xcb_window_t window_id);
+    int (*flush)(xcb_connection_t* connection);
 } xcb_dispatch;
 
 rotten_success_code connect_test_xcb(rotten_window_connection* connection);
+
+typedef struct rotten_window_xcb {
+    rotten_window_base base;
+    xcb_dispatch* dispatch;
+
+    xcb_window_t window_id;
+
+} rotten_window_xcb;
 #endif
 
 // For allowing the user to dynamically open the display server libraries

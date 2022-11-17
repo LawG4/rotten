@@ -187,6 +187,19 @@ rotten_success_code connect_test_xcb(rotten_window_connection* connection)
             rotten_log("Failed to connect to xcb display", e_rotten_log_warning);
             return e_rotten_library_not_present;
         }
+
+        // The xcb library is valid, and we can connect to an xcb server. It is now worth collecting the
+        // function pointers and getting the details about the root window
+        s_xcb.get_setup = dlsym(s_xcb.libary_handle, "xcb_get_setup");
+        s_xcb.setup_roots_iterator = dlsym(s_xcb.libary_handle, "xcb_setup_roots_iterator");
+        s_xcb.generate_id = dlsym(s_xcb.libary_handle, "xcb_generate_id");
+        s_xcb.create_window = dlsym(s_xcb.libary_handle, "xcb_create_window");
+        s_xcb.map_window = dlsym(s_xcb.libary_handle, "xcb_map_window");
+        s_xcb.flush = dlsym(s_xcb.libary_handle, "xcb_flush");
+
+        // Get the information about the screen from the root node by iterating over all of the root windows
+        // and just selecting the first one
+        s_xcb.screen_t = s_xcb.setup_roots_iterator(s_xcb.get_setup(s_xcb.connection_t)).data;
     }
 
     // We got here, so we know that we can make a valid xcb connection which is nice! I'm not sure, but I
