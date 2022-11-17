@@ -6,13 +6,33 @@
 
 // On linux there are multiple common different display servers. And the user might not want to build for all
 // of them. So we give them the ability to exclude each one individually
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+#include <wayland-client-core.h>
+
+// Dynamic funciton dispatch table for wayland
+typedef struct wayland_dispatch {
+    void* wayland_handle;        // Handle to linux shared library
+    struct wl_display* display;  // Connection to the wayland compositer
+
+    // Function pointers for wayland
+    struct wl_display* (*display_connect)(const char*);
+    void (*display_disconnect)(struct wl_display*);
+} wayland_dispatch;
+
+/***
+ * @brief Attempts to connect to a wayland server and load all of the function pointers from the hosts
+ * wayland-client library
+ * @param window Pointer to the window to hande the
+ * @returns success code, success only if wayland is the chosen window backend
+ */
+rotten_success_code connect_wayland(rotten_window* window);
+#endif
+
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
 #include <xcb/xcb.h>
 #include <xcb/xcbext.h>
-#endif
 
-#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
-#include <wayland-client-core.h>
+rotten_success_code connect_xcb(rotten_window* window);
 #endif
 
 // For allowing the user to dynamically open the display server libraries
