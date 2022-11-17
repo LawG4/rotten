@@ -12,21 +12,20 @@ rotten_success_code rotten_window_connect(rotten_window* window)
 
 // Attempt to connect to wayland display server
 #ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
-    if (connect_wayland(window) == e_rotten_success)
+    if (connect_test_wayland(window) == e_rotten_success)
         window->supported_window_backends |= e_rotten_window_wayland;
-
 #endif  // ! Wayland connect
 
 // Attempt to connect to XCB display server
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
-    rotten_log("Attempting to connect to XCB server", e_rotten_log_info);
-
+    if (connect_test_xcb(window) == e_rotten_success)
+        window->supported_window_backends |= e_rotten_window_xcb;
 #endif  // ! XCB connect
 
 #else
     rotten_log_debug("Rotten window is not implemented for this os atm", e_rotten_log_error);
     return e_rotten_unimplemented;
-#endif
+#endif  // ! End of OS specific
 
     // Check that at least one of the window connections was enabled
     if (window->supported_window_backends == 0) {
@@ -48,13 +47,11 @@ rotten_success_code rotten_window_connect(rotten_window* window)
 
 static wayland_dispatch s_wl = {.wayland_handle = NULL, .display_connect = NULL};
 
-rotten_success_code connect_wayland(rotten_window* window)
+rotten_success_code connect_test_wayland(rotten_window* window)
 {
-    rotten_log_debug("Attempting to open wayland connection", e_rotten_log_info);
-
     // Has the client library on this computer been opened yet?
     if (s_wl.wayland_handle == NULL) {
-        rotten_log_debug("Attempting to open wayland-client library", e_rotten_log_info);
+        rotten_log_debug("Attempting to open libwayland-client.so", e_rotten_log_verbose);
         void* wayland_handle = dlopen("libwayland-client.so", RTLD_LAZY);
 
         // Store the wayland handle or exit the wayland process.
@@ -62,7 +59,7 @@ rotten_success_code connect_wayland(rotten_window* window)
             rotten_log("Failed to open libwayland-client.so", e_rotten_log_warning);
             return e_rotten_library_not_present;
         }
-        rotten_log("libwayland-client.so opened successfully", e_rotten_log_info);
+        rotten_log("Successfully opened libwayland-client.so", e_rotten_log_info);
         s_wl.wayland_handle = wayland_handle;
     }
 
@@ -99,7 +96,7 @@ rotten_success_code connect_wayland(rotten_window* window)
         // have to attempt to make a connection, now I think if there's X session this should return NULL
         //
         // TODO : Check this assumption!!!!!
-        rotten_log_debug("Attempting to connect to wayland compositor", e_rotten_log_info);
+        rotten_log_debug("Attempting to connect to wayland compositor", e_rotten_log_verbose);
         s_wl.display = s_wl.display_connect(NULL);
 
         if (s_wl.display == NULL) {
@@ -120,6 +117,57 @@ rotten_success_code connect_wayland(rotten_window* window)
 #endif  // ! Wayland
 
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
+
+static xcb_dispatch s_xcb = {.libary_handle = NULL, .connect = NULL};
+
+rotten_success_code connect_test_xcb(rotten_window* window)
+{
+    // Same as above try to open the dynamic library for xcb on the host machine
+    if (s_xcb.libary_handle == NULL) {
+        rotten_log_debug("Attempting to open libxcb.so", e_rotten_log_verbose);
+        s_xcb.libary_handle = dlopen("libxcb.so", RTLD_LAZY);
+        if (s_xcb.libary_handle == NULL) {
+            rotten_log("Failed to open libxcb.so", e_rotten_log_warning);
+            return e_rotten_library_not_present;
+        }
+
+        rotten_log("Successfully opened libxcb.so", e_rotten_log_info);
+    }
+
+    // xcb library handle is opened, find the function pointer to connect to the screen
+    if (s_xcb.connect == NULL) {
+        s_xcb.connect = dlsym(s_xcb.libary_handle, "xcb_connect");
+
+        // This should never happen unless the user is making their own xcb implementation or something?
+        if (s_xcb.connect == NULL) {
+            rotten_log_debug(
+              "Somehow couldn't find the function pointer for xcb_connect despite openeing xcb library. How "
+              "did this happen??",
+              e_rotten_log_error);
+
+            return e_rotten_unclassified_error;
+        }
+    }
+
+    // Now check if the connection can be made using this function pointer
+    if (s_xcb.connection_t == NULL) {
+        rotten_log_debug("Attempting to connect to xcb display", e_rotten_log_verbose);
+        s_xcb.connection_t = s_xcb.connect(NULL, NULL);
+
+        if (s_xcb.connection_t == NULL) {
+            rotten_log("Failed to connect to xcb display", e_rotten_log_warning);
+            return e_rotten_library_not_present;
+        }
+    }
+
+    // We got here, so we know that we can make a valid xcb connection which is nice! I'm not sure, but I
+    // think this should remain valid for the runtime of the program? What happens if the session changes? or
+    // a monitor gets disconnected? I have no idea? I'm gonna assume this stays valid
+    //
+    // TODO: Check this assumption
+    rotten_log("Successfully opened xcb connection", e_rotten_log_info);
+    return e_rotten_success;
+}
 
 #endif  // ! XCB
 
