@@ -28,6 +28,17 @@ size_t rotten_window_block_size(rotten_window_connection* connection, rotten_win
 //
 
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
+
+// The way we give the window extra attributes is having a mask, that tells properties we're setting. Each
+// property has it's own values to set via a bit mask, so we pass an array of bitmasks for each property. Take
+// for example the events we want the window to listen for, we set the mask to contain the events bit on, and
+// then in the values array, we have an element with a bitmask of all the events we want the window to listen
+// for
+static const uint32_t xcb_property_mask = XCB_CW_EVENT_MASK;
+static const uint32_t xcb_property_values[] = {
+  // Events to listen for
+  XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS};
+
 rotten_success_code rotten_window_init_xcb(rotten_window* window, rotten_window_connection* connection,
                                            rotten_window_definition* definition)
 {
@@ -44,8 +55,8 @@ rotten_success_code rotten_window_init_xcb(rotten_window* window, rotten_window_
     // this id. oh mama is this a doozey
     xcb->dispatch->create_window(xcb->dispatch->connection_t, XCB_COPY_FROM_PARENT, xcb->window_id,
                                  xcb->dispatch->screen_t->root, 0, 0, definition->width, definition->height,
-                                 0, XCB_WINDOW_CLASS_INPUT_OUTPUT, xcb->dispatch->screen_t->root_visual, 0,
-                                 NULL);
+                                 0, XCB_WINDOW_CLASS_INPUT_OUTPUT, xcb->dispatch->screen_t->root_visual,
+                                 xcb_property_mask, xcb_property_values);
 
     return e_rotten_success;
 }
@@ -79,8 +90,10 @@ rotten_success_code rotten_window_init(rotten_window* window, rotten_window_conn
 //
 rotten_success_code rotten_window_show(rotten_window* window)
 {
-    // convert pointer to base for translation
+    // convert pointer to base for translation. Now that the window should be shown we can tell the base that
+    // it should now be shown
     rotten_window_base* base = (rotten_window_base*)window;
+    base->remain_open = 1;
 
 #ifdef __linux__
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
