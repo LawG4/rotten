@@ -78,7 +78,7 @@ int main()
     while (rotten_window_remain_open(window)) {
         rotten_window_poll_events(window);
     }
-
+    printf("Exiting windowing loop\n");
     // We're done!
     return 0;
 }

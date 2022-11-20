@@ -197,6 +197,11 @@ rotten_success_code connect_test_xcb(rotten_window_connection* connection)
         s_xcb.map_window = dlsym(s_xcb.libary_handle, "xcb_map_window");
         s_xcb.flush = dlsym(s_xcb.libary_handle, "xcb_flush");
 
+        s_xcb.poll_for_event = dlsym(s_xcb.libary_handle, "xcb_poll_for_event");
+        s_xcb.intern_atom = dlsym(s_xcb.libary_handle, "xcb_intern_atom");
+        s_xcb.intern_atom_reply = dlsym(s_xcb.libary_handle, "xcb_intern_atom_reply");
+        s_xcb.change_property = dlsym(s_xcb.libary_handle, "xcb_change_property");
+
         // Get the information about the screen from the root node by iterating over all of the root windows
         // and just selecting the first one
         s_xcb.screen_t = s_xcb.setup_roots_iterator(s_xcb.get_setup(s_xcb.connection_t)).data;
