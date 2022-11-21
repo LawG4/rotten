@@ -29,8 +29,11 @@ void rotten_window_poll_events_wayland(rotten_window_xcb* xcb)
 #endif  // !Wayland
 
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
-void rotten_window_poll_events_xcb(rotten_window_xcb* xcb)
+void rotten_window_poll_events_xcb(rotten_window_xcb* window)
 {
+    rotten_library_xcb* xcb = window->xcb;
+    rotten_window_xcb_extra* extra = &window->extra;
+
     // How do we process events in XCB? Well the server will store a list of events. The next event can be
     // retrieved from the wait_for_event, but this actually blocks the current thread until XCB gets an event.
     // Using this in an event loop won't let us exit! But poll_event simply deques any existing events but
@@ -38,7 +41,7 @@ void rotten_window_poll_events_xcb(rotten_window_xcb* xcb)
     //
     // event will be a null pointer if there is no event in the queue
     int xcb_err = 0;
-    xcb_generic_event_t* event = xcb->dispatch->poll_for_event(xcb->dispatch->connection_t, &xcb_err);
+    xcb_generic_event_t* event = xcb->poll_for_event(extra->connection, &xcb_err);
 
     while (event != NULL) {
         // What type of event did we just recieve from the server? There is a bit which represents if the
@@ -51,9 +54,9 @@ void rotten_window_poll_events_xcb(rotten_window_xcb* xcb)
             case XCB_CLIENT_MESSAGE: {
                 // Compare the message from the wm to the close request, if so set the window to close
                 xcb_client_message_event_t* client = (xcb_client_message_event_t*)event;
-                if (client->data.data32[0] == xcb->window_manager_close_atom) {
+                if (client->data.data32[0] == extra->window_manager_close_atom) {
                     rotten_log_debug("Window close request recieved from WM", e_rotten_log_info);
-                    xcb->base.remain_open = 0;
+                    window->base.remain_open = 0;
                 }
                 break;
             }
@@ -82,7 +85,7 @@ void rotten_window_poll_events_xcb(rotten_window_xcb* xcb)
         free(event);
 
         // dequeue the next event
-        event = xcb->dispatch->poll_for_event(xcb->dispatch->connection_t, &xcb_err);
+        event = xcb->poll_for_event(extra->connection, &xcb_err);
     }
 }
 #endif  // | XCB
