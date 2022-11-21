@@ -113,6 +113,7 @@ typedef struct rotten_window_xcb_extra {
     xcb_connection_t* connection;
     xcb_screen_t* root_window;
     xcb_window_t window_id;
+    xcb_atom_t window_manager_close_atom;
 } rotten_window_xcb_extra;
 
 /**
