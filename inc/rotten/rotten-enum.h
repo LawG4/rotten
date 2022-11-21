@@ -15,7 +15,8 @@ typedef enum rotten_success_code {
     e_rotten_success = 0,              // All good
     e_rotten_unclassified_error = 1,   // Not yet clasified error
     e_rotten_library_not_present = 2,  // A dependant library could not be loaded
-    e_rotten_unimplemented = 3         // The functionality is not yet iimplemented
+    e_rotten_feature_not_present = 3,  // OS, software, or hardware can't use this feature
+    e_rotten_unimplemented = 4         // The functionality is not yet iimplemented
 } rotten_success_code;
 
 typedef enum rotten_log_level {

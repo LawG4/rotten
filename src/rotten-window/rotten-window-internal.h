@@ -46,47 +46,12 @@ rotten_success_code connect_test_wayland(rotten_window_connection* connection);
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
 #include <xcb/xcb.h>
 #include <xcb/xcbext.h>
-
-typedef struct xcb_dispatch {
-    void* libary_handle;
-    xcb_connection_t* connection_t;  // connection handle
-    xcb_screen_t* screen_t;          // information about the root window
-
-    // Function pointers for connection
-    xcb_connection_t* (*connect)(const char* display_name, int* p_screen_num);
-    const struct xcb_setup_t* (*get_setup)(xcb_connection_t* connection);
-    xcb_screen_iterator_t (*setup_roots_iterator)(const xcb_setup_t* root_setup);
-
-    // Function pointers for creating
-    xcb_window_t (*generate_id)(xcb_connection_t* xcb_connection);
-    xcb_void_cookie_t (*create_window)(xcb_connection_t* connection, uint8_t depth, xcb_window_t window_id,
-                                       xcb_window_t parent_window_id, int16_t xpos, int16_t ypos,
-                                       uint16_t width, uint16_t height, uint16_t border_width, uint16_t class,
-                                       xcb_visualid_t visual, uint32_t value_mask,
-                                       const uint32_t* value_list);
-    xcb_void_cookie_t (*map_window)(xcb_connection_t* connection, xcb_window_t window_id);
-    int (*flush)(xcb_connection_t* connection);
-
-    // Function pointers for events
-    xcb_intern_atom_cookie_t (*intern_atom)(xcb_connection_t* connection, uint8_t only_if_exists,
-                                            uint16_t name_length, const char* name);
-    xcb_intern_atom_reply_t* (*intern_atom_reply)(xcb_connection_t* connection,
-                                                  xcb_intern_atom_cookie_t cookie, xcb_generic_error_t** e);
-    xcb_void_cookie_t (*change_property)(xcb_connection_t* connection, uint8_t mode, xcb_window_t window,
-                                         xcb_atom_t property, xcb_atom_t type, uint8_t format,
-                                         uint32_t data_length, const void* data);
-    xcb_generic_event_t* (*poll_for_event)(xcb_connection_t* connection, int* error);
-
-} xcb_dispatch;
-
-rotten_success_code connect_test_xcb(rotten_window_connection* connection);
+#include "rotten-xcb.h"
 
 typedef struct rotten_window_xcb {
-    rotten_window_base base;
-    xcb_dispatch* dispatch;
-
-    xcb_window_t window_id;
-    xcb_atom_t window_manager_close_atom;
+    rotten_window_base base;        // Default information
+    rotten_window_xcb_extra extra;  // XCB specific information
+    rotten_library_xcb* xcb;        // handle to xcb library functions
 } rotten_window_xcb;
 #endif
 

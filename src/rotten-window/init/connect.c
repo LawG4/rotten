@@ -1,24 +1,60 @@
+/************************************************************************************************************
+ * @file Rotten window connect
+ * @brief Connects the application to the host Os' windowing system
+ * @note Public functions defined : rotten_window_connect
+ * @copyright Rotten, MIT.
+ * @authors Lawrence G,
+ ************************************************************************************************************/
+
 #include "../rotten-window-internal.h"
 
-//
-// Define the static handles for the different windowing systems
-// Ideally, I'd like these to stay internal. ensure to set the handles to nullpointers
-//
 #ifdef __linux__
+#ifndef ROTTEN_WINDOW_EXCLUDE_XCB
 
+// Keep an internal reference to the xcb library which will be dynamically loaded at runtime
+// TODO: This is not going to be threadsafe - and I think there must be a better way to do this, I could give
+// each window it's own copy of the library and it's function pointers, but that seems excessive. For now I
+// will give each window a pointer to this static library
+static rotten_library_xcb s_xcb = {.xcb_lib = NULL, .connect = NULL, .create_window = NULL};
+
+// Actually attempt to connect to the library
+rotten_success_code connect_test_xcb(rotten_window_connection* connection)
+{
+    // Is the native library handle null? If so then attempt to open it
+    if (s_xcb.xcb_lib == NULL) {
+        rotten_success_code err = rotten_library_xcb_load_min(&s_xcb);
+        if (err != e_rotten_success) return err;
+    }
+
+    // We got here so the xcb native library is openable, so now lets check if we can use it to connect to the
+    // server, we have already ensured the minimum functions have been loaded above
+    rotten_success_code err = rotten_library_xcb_valid_session(&s_xcb);
+    if (err != e_rotten_success) {
+        return err;
+    }
+
+    // Now load the rest of the functions
+    if (s_xcb.create_window == NULL) {
+        err = rotten_library_xcb_load_full(&s_xcb);
+        if (err != e_rotten_success) return err;
+    }
+
+    // We got here, so we know that we can make a valid xcb connection which is nice! I'm not sure, but I
+    // think this should remain valid for the runtime of the program? What happens if the session changes? or
+    // a monitor gets disconnected? I have no idea? I'm gonna assume this stays valid
+    //
+    // TODO: Check this assumption
+    rotten_log("Successfully opened xcb connection", e_rotten_log_info);
+    return e_rotten_success;
+}
+
+#endif  //! XCB
 #ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
 static wayland_dispatch s_wl = {
   .wayland_handle = NULL,  // linux native shared lib handle
   .display_connect = NULL  //
 };
 #endif  //! Wayland
-
-#ifndef ROTTEN_WINDOW_EXCLUDE_XCB
-static xcb_dispatch s_xcb = {
-  .libary_handle = NULL,  // linux native shared lib handle
-  .connect = NULL         //
-};
-#endif  //! XCB
 
 #endif  //! linux
 
@@ -149,71 +185,6 @@ rotten_success_code connect_test_wayland(rotten_window_connection* connection)
 #endif  // ! Wayland
 
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
-rotten_success_code connect_test_xcb(rotten_window_connection* connection)
-{
-    // Same as above try to open the dynamic library for xcb on the host machine
-    if (s_xcb.libary_handle == NULL) {
-        rotten_log_debug("Attempting to open libxcb.so", e_rotten_log_verbose);
-        s_xcb.libary_handle = dlopen("libxcb.so", RTLD_LAZY);
-        if (s_xcb.libary_handle == NULL) {
-            rotten_log("Failed to open libxcb.so", e_rotten_log_warning);
-            return e_rotten_library_not_present;
-        }
 
-        rotten_log("Successfully opened libxcb.so", e_rotten_log_info);
-    }
-
-    // xcb library handle is opened, find the function pointer to connect to the screen
-    if (s_xcb.connect == NULL) {
-        s_xcb.connect = dlsym(s_xcb.libary_handle, "xcb_connect");
-
-        // This should never happen unless the user is making their own xcb implementation or something?
-        if (s_xcb.connect == NULL) {
-            rotten_log_debug(
-              "Somehow couldn't find the function pointer for xcb_connect despite openeing xcb library. How "
-              "did this happen??",
-              e_rotten_log_error);
-
-            return e_rotten_unclassified_error;
-        }
-    }
-
-    // Now check if the connection can be made using this function pointer
-    if (s_xcb.connection_t == NULL) {
-        rotten_log_debug("Attempting to connect to xcb display", e_rotten_log_verbose);
-        s_xcb.connection_t = s_xcb.connect(NULL, NULL);
-
-        if (s_xcb.connection_t == NULL) {
-            rotten_log("Failed to connect to xcb display", e_rotten_log_warning);
-            return e_rotten_library_not_present;
-        }
-
-        // The xcb library is valid, and we can connect to an xcb server. It is now worth collecting the
-        // function pointers and getting the details about the root window
-        s_xcb.get_setup = dlsym(s_xcb.libary_handle, "xcb_get_setup");
-        s_xcb.setup_roots_iterator = dlsym(s_xcb.libary_handle, "xcb_setup_roots_iterator");
-        s_xcb.generate_id = dlsym(s_xcb.libary_handle, "xcb_generate_id");
-        s_xcb.create_window = dlsym(s_xcb.libary_handle, "xcb_create_window");
-        s_xcb.map_window = dlsym(s_xcb.libary_handle, "xcb_map_window");
-        s_xcb.flush = dlsym(s_xcb.libary_handle, "xcb_flush");
-
-        s_xcb.poll_for_event = dlsym(s_xcb.libary_handle, "xcb_poll_for_event");
-        s_xcb.intern_atom = dlsym(s_xcb.libary_handle, "xcb_intern_atom");
-        s_xcb.intern_atom_reply = dlsym(s_xcb.libary_handle, "xcb_intern_atom_reply");
-        s_xcb.change_property = dlsym(s_xcb.libary_handle, "xcb_change_property");
-
-        // Get the information about the screen from the root node by iterating over all of the root windows
-        // and just selecting the first one
-        s_xcb.screen_t = s_xcb.setup_roots_iterator(s_xcb.get_setup(s_xcb.connection_t)).data;
-    }
-
-    // We got here, so we know that we can make a valid xcb connection which is nice! I'm not sure, but I
-    // think this should remain valid for the runtime of the program? What happens if the session changes? or
-    // a monitor gets disconnected? I have no idea? I'm gonna assume this stays valid
-    //
-    // TODO: Check this assumption
-    rotten_log("Successfully opened xcb connection", e_rotten_log_info);
-    return e_rotten_success;
-}
 #endif  // ! XCB
 #endif  // ! __linux__
