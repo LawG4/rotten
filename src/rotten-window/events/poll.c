@@ -1,11 +1,33 @@
+/************************************************************************************************************
+ * @file Rotten window polling
+ * @brief Allows the user to poll for what events have happened since the last time the window was polled. The
+ * user attaches the function callbacks so that the events can be called automatically in order when the poll
+ * happens, instead of polling events and then checking what events happen and then calling them manually.
+ * @note public functions defined : rotten_window_poll_events, rotten_window_remain_open
+ * @copyright Rotten, MIT.
+ * @authors Lawrence G,
+ ************************************************************************************************************/
 #include <stdlib.h>
 #include "../rotten-window-internal.h"
+
+uint8_t rotten_window_remain_open(rotten_window* window)
+{
+    // This can be done without worrying about the different platforms since it's contained in the base window
+    return ((rotten_window_base*)window)->remain_open;
+}
 
 //
 // Polling per platform events
 //
 
 #ifdef __linux__
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+void rotten_window_poll_events_wayland(rotten_window_xcb* xcb)
+{
+    rotten_log_debug("Not implemented for wayland", e_rotten_log_error);
+}
+#endif  // !Wayland
+
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
 void rotten_window_poll_events_xcb(rotten_window_xcb* xcb)
 {
@@ -75,6 +97,12 @@ void rotten_window_poll_events(rotten_window* window)
     rotten_window_base* base = (rotten_window_base*)window;
 
 #ifdef __linux__
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+    if (base->backend == e_rotten_window_wayland) {
+        return;
+    }
+#endif  // !Wayland
+
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
     // Poll the xcb events for the window
     if (base->backend == e_rotten_window_xcb) {
@@ -83,10 +111,4 @@ void rotten_window_poll_events(rotten_window* window)
     }
 #endif  // ! XCB
 #endif  // !_linux
-}
-
-uint8_t rotten_window_remain_open(rotten_window* window)
-{
-    // This can be done without worrying about the different platforms since it's contained in the base window
-    return ((rotten_window_base*)window)->remain_open;
 }
