@@ -68,4 +68,5 @@ rotten_success_code rotten_library_xcb_close(rotten_library_xcb* lib)
 {
     rotten_dynamic_library_close(lib->xcb_lib);
     lib->xcb_lib == NULL;
+    return e_rotten_success;
 }

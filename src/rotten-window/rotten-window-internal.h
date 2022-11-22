@@ -38,7 +38,7 @@ typedef struct rotten_window_wayland {
     rotten_window_base base;            // Default information
     rotten_window_wayland_extra extra;  // Wayland specific information for the window
     rotten_library_wayland way;         // handle to the wayland library functions
-};
+} rotten_window_wayland;
 #endif  //! wayland
 #endif  // !Linux
 
