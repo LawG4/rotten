@@ -9,6 +9,7 @@
 #ifndef __ROTTEN_EXTERNAL_WINDOW_WAYLAND_H__
 #define __ROTTEN_EXTERNAL_WINDOW_WAYLAND_H__ (1)
 #include <wayland-client-core.h>
+#include <wayland-client-protocol.h>
 #include "rotten-core.h"
 #include "rotten-dynamic-loading.h"
 ROTTEN_CPP_GUARD
@@ -23,6 +24,8 @@ typedef struct rotten_library_wayland {
 
     struct wl_display* (*display_connect)(const char*);
     void (*display_disconnect)(struct wl_display*);
+    struct wl_surface* (*compositor_create_surface)(struct wl_compositor* compositor);
+
 } rotten_library_wayland;
 
 typedef struct rotten_window_wayland_extra {

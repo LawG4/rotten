@@ -29,9 +29,7 @@ rotten_success_code connect_test_xcb(rotten_window_connection* connection)
     // We got here so the xcb native library is openable, so now lets check if we can use it to connect to the
     // server, we have already ensured the minimum functions have been loaded above
     rotten_success_code err = rotten_library_xcb_valid_session(&s_xcb);
-    if (err != e_rotten_success) {
-        return err;
-    }
+    if (err != e_rotten_success) return err;
 
     // Now load the rest of the functions
     if (s_xcb.create_window == NULL) {
@@ -44,10 +42,37 @@ rotten_success_code connect_test_xcb(rotten_window_connection* connection)
 }
 #endif  //! XCB
 
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+
 // Introduce the wayland specific code path for connection. remember that we're currently holding an internal
 // static library and giving each window a pointer to the library. TLDR this sucks
-#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
-rotten_success_code connect_test_wayland(rotten_window_connection* connection) { return e_rotten_success; }
+static rotten_library_wayland s_way = {
+  .way_lib = NULL, .display_connect = NULL, .compositor_create_surface = NULL};
+
+rotten_success_code connect_test_wayland(rotten_window_connection* connection)
+{
+    // Is the static library handle null? if so attempt to open wayland client
+    if (s_way.way_lib == NULL) {
+        rotten_success_code err = rotten_library_wayland_load_min(&s_way);
+        if (err != e_rotten_success) return err;
+    }
+
+    // Got this far, so we have the wayland connect function, perform a dummy connection to see if we can find
+    // a valid wayland compositor.
+    rotten_success_code err = rotten_library_wayland_valid_session(&s_way);
+    if (err != e_rotten_success) return err;
+
+    // We have the ability to connect to a wayland compositor, so it is now worth loading the rest of the
+    // function pointers for wayland. We use the create window function as a test as we only load that
+    // function pointer once wayland compositor is found
+
+    if (s_way.compositor_create_surface == NULL) {
+        err = rotten_library_wayland_load_full(&s_way);
+        if (err != e_rotten_success) return err;
+    }
+    rotten_log("Successfully opened connection to wayland compositor", e_rotten_log_info);
+    return e_rotten_success;
+}
 #endif  //! Wayland
 #endif  //! linux
 
@@ -71,7 +96,7 @@ rotten_success_code rotten_window_connect(rotten_window_connection* connection)
 
         // by default prefer wayland
         connection->selected_backend = e_rotten_window_wayland;
-        connection->backend_handle = &s_wl;
+        connection->backend_handle = &s_way;
     }
 #endif  // ! Wayland connect
 
