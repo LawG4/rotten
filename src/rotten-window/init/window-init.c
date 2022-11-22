@@ -45,6 +45,9 @@ static const uint32_t xcb_property_values[] = {
 rotten_success_code rotten_window_init_xcb(rotten_window_xcb* window, rotten_window_connection* connection,
                                            rotten_window_definition* definition)
 {
+    // The connection contains a pointer to the xcb library which is statically allocated inside the connect.c
+    // file. I have my doubts about this method to be honest
+    window->xcb = (rotten_library_xcb*)connection->backend_handle;
     rotten_window_xcb_extra* extra = &window->extra;
     rotten_library_xcb* xcb = window->xcb;
 

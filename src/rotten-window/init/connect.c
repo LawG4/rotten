@@ -39,11 +39,6 @@ rotten_success_code connect_test_xcb(rotten_window_connection* connection)
         if (err != e_rotten_success) return err;
     }
 
-    // We got here, so we know that we can make a valid xcb connection which is nice! I'm not sure, but I
-    // think this should remain valid for the runtime of the program? What happens if the session changes? or
-    // a monitor gets disconnected? I have no idea? I'm gonna assume this stays valid
-    //
-    // TODO: Check this assumption
     rotten_log("Successfully opened xcb connection", e_rotten_log_info);
     return e_rotten_success;
 }
