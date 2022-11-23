@@ -14,3 +14,10 @@ struct wl_registry* rotten_wl_display_get_registry(rotten_library_wayland* lib, 
 
     return (struct wl_registry*)registry;
 }
+
+int rotten_wl_registry_add_listener(rotten_library_wayland* lib, struct wl_registry* registry,
+                                    const struct wl_registry_listener* listener, void* data)
+{
+    // Real quick, what the hell is that awfull void function pointer class
+    return lib->proxy_add_listener((struct wl_proxy*)registry, (void (**)(void))listener, data);
+}

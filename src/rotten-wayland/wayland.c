@@ -44,6 +44,9 @@ rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib
 {
     // Proxy functions
     LOAD_WAY_INTERFACE(registry_interface);
+    LOAD_WAY_FN(proxy_get_version);
+    LOAD_WAY_FN(proxy_marshal_flags);
+    LOAD_WAY_FN(proxy_add_listener);
     // Compositor functions
     LOAD_WAY_INTERFACE(compositor_interface);
     LOAD_WAY_FN(compositor_create_surface);
