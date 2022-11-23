@@ -26,6 +26,11 @@ typedef struct rotten_library_wayland {
     void (*display_disconnect)(struct wl_display*);
     struct wl_surface* (*compositor_create_surface)(struct wl_compositor* compositor);
 
+    // Pointer to a const structs which are exported const symbols from the wayland library, we instead fetch
+    // pointers to them. Using the same method as function pointers
+    struct wl_interface* registry_interface;
+    struct wl_interface* compositor_interface;
+
 } rotten_library_wayland;
 
 typedef struct rotten_window_wayland_extra {
@@ -39,5 +44,15 @@ rotten_success_code rotten_library_wayland_valid_session(rotten_library_wayland*
 rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib);
 
 rotten_success_code rotten_library_wayland_close(rotten_library_wayland* lib);
+
+//
+// Wayland has quite a few static inline functions which use the default symbols. obviously we cant use them
+// as they will through a linking error, so provide the most scuffed wrapper ever. They will be
+// reimplementations of the static inlines, just taking an extra rotten_library_wayland pointer
+// parameter
+//
+
+struct wl_registry* rotten_wl_display_get_registry(rotten_library_wayland* lib, struct wl_display* display);
+
 ROTTEN_CPP_GUARD_END
 #endif

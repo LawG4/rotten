@@ -4,6 +4,11 @@
 
 #define LOAD_WAY_FN(X) lib->X = rotten_dynamic_library_fetch(lib->way_lib, "wl_" #X)
 
+// Now this is an interesting one, there is a const struct exported as a symbol for the wayland compositor
+// interface, how do we get it? I guess just fetch a pointer and pray?
+#define LOAD_WAY_INTERFACE(X) \
+    lib->X = (struct wl_interface*)rotten_dynamic_library_fetch(lib->way_lib, "wl_" #X)
+
 rotten_success_code rotten_library_wayland_load_min(rotten_library_wayland* lib)
 {
     // Load the shared library from the system
@@ -37,6 +42,10 @@ rotten_success_code rotten_library_wayland_valid_session(rotten_library_wayland*
 
 rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib)
 {
+    // Proxy functions
+    LOAD_WAY_INTERFACE(registry_interface);
+    // Compositor functions
+    LOAD_WAY_INTERFACE(compositor_interface);
     LOAD_WAY_FN(compositor_create_surface);
     return e_rotten_success;
 }
