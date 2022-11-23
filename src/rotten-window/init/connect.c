@@ -70,7 +70,7 @@ rotten_success_code connect_test_wayland(rotten_window_connection* connection)
         err = rotten_library_wayland_load_full(&s_way);
         if (err != e_rotten_success) return err;
     }
-    rotten_log("Successfully opened connection to wayland compositor", e_rotten_log_info);
+    rotten_log("Successfully opened connection to wayland server", e_rotten_log_info);
     return e_rotten_success;
 }
 #endif  //! Wayland
