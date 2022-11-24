@@ -24,11 +24,20 @@ typedef struct rotten_library_wayland {
 
     struct wl_display* (*display_connect)(const char*);
     void (*display_disconnect)(struct wl_display*);
+    int (*display_dispatch)(struct wl_display* display);
+    int (*display_roundtrip)(struct wl_display* display);
+
     uint32_t (*proxy_get_version)(struct wl_proxy* prozy);
     struct wl_proxy* (*proxy_marshal_flags)(struct wl_proxy*, uint32_t opcode,
                                             const struct wl_interface* interface, uint32_t version,
                                             uint32_t flags, ...);
     int (*proxy_add_listener)(struct wl_proxy*, void (**implementation)(void), void* data);
+    int (*registry_add_listener)(struct wl_registry* registry, const struct wl_registry_listener* listener,
+                                 void* data);
+
+    void* (*registry_bind)(struct wl_registry* registry, uint32_t id, struct wl_interface* interface,
+                           uint32_t version);
+
     struct wl_surface* (*compositor_create_surface)(struct wl_compositor* compositor);
 
     // Pointer to a const structs which are exported const symbols from the wayland library, we instead fetch
@@ -39,8 +48,14 @@ typedef struct rotten_library_wayland {
 } rotten_library_wayland;
 
 typedef struct rotten_window_wayland_extra {
-    struct wl_display* display;  // Pointer to the information about the current display
+    struct wl_display* display;    // Pointer to the information about the current display
+    struct wl_registry* registry;  // Proxy for the global resource manager
+    struct wl_compositor* compositor;
 } rotten_window_wayland_extra;
+
+//
+// Library runtime loaders
+//
 
 rotten_success_code rotten_library_wayland_load_min(rotten_library_wayland* lib);
 
@@ -61,5 +76,8 @@ struct wl_registry* rotten_wl_display_get_registry(rotten_library_wayland* lib, 
 
 int rotten_wl_registry_add_listener(rotten_library_wayland* lib, struct wl_registry* registry,
                                     const struct wl_registry_listener* listener, void* data);
+
+void* rotten_wl_registry_bind(rotten_library_wayland* lib, struct wl_registry* registry, uint32_t id,
+                              const struct wl_interface* interface, uint32_t version);
 ROTTEN_CPP_GUARD_END
 #endif

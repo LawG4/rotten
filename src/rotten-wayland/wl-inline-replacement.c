@@ -21,3 +21,10 @@ int rotten_wl_registry_add_listener(rotten_library_wayland* lib, struct wl_regis
     // Real quick, what the hell is that awfull void function pointer class
     return lib->proxy_add_listener((struct wl_proxy*)registry, (void (**)(void))listener, data);
 }
+
+void* rotten_wl_registry_bind(rotten_library_wayland* lib, struct wl_registry* registry, uint32_t id,
+                              const struct wl_interface* interface, uint32_t version)
+{
+    return (void*)lib->proxy_marshal_flags((struct wl_proxy*)registry, WL_REGISTRY_BIND, interface, version,
+                                           0, id, interface->name, version, NULL);
+}
