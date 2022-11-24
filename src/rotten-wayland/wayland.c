@@ -11,6 +11,9 @@
 
 rotten_success_code rotten_library_wayland_load_min(rotten_library_wayland* lib)
 {
+    // Get memset mofo >:(
+    memset(lib, 0, sizeof(rotten_library_wayland));
+
     // Load the shared library from the system
     rotten_log_debug("Attempting to open libwayland-client.so", e_rotten_log_verbose);
     lib->way_lib = rotten_dynamic_library_open("libwayland-client.so");
@@ -42,14 +45,20 @@ rotten_success_code rotten_library_wayland_valid_session(rotten_library_wayland*
 
 rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib)
 {
+    // Registry functions
+    LOAD_WAY_FN(display_dispatch);
+    LOAD_WAY_FN(display_roundtrip);
+
     // Proxy functions
     LOAD_WAY_INTERFACE(registry_interface);
     LOAD_WAY_FN(proxy_get_version);
     LOAD_WAY_FN(proxy_marshal_flags);
     LOAD_WAY_FN(proxy_add_listener);
+
     // Compositor functions
     LOAD_WAY_INTERFACE(compositor_interface);
     LOAD_WAY_FN(compositor_create_surface);
+
     return e_rotten_success;
 }
 

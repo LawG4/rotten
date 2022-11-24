@@ -32,11 +32,6 @@ typedef struct rotten_library_wayland {
                                             const struct wl_interface* interface, uint32_t version,
                                             uint32_t flags, ...);
     int (*proxy_add_listener)(struct wl_proxy*, void (**implementation)(void), void* data);
-    int (*registry_add_listener)(struct wl_registry* registry, const struct wl_registry_listener* listener,
-                                 void* data);
-
-    void* (*registry_bind)(struct wl_registry* registry, uint32_t id, struct wl_interface* interface,
-                           uint32_t version);
 
     struct wl_surface* (*compositor_create_surface)(struct wl_compositor* compositor);
 

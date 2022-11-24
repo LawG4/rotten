@@ -17,6 +17,9 @@ size_t rotten_window_block_size(rotten_window_connection* connection, rotten_win
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
     if (connection->selected_backend == e_rotten_window_xcb) return sizeof(rotten_window_xcb);
 #endif  //! xcb
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+    if (connection->selected_backend == e_rotten_window_wayland) return sizeof(rotten_window_wayland);
+#endif  //! Wayland
 #endif  // !linux
 
     // Got to the end without finding a supported backend
@@ -27,7 +30,7 @@ size_t rotten_window_block_size(rotten_window_connection* connection, rotten_win
 //
 // Initialising the window memory block
 //
-
+#ifdef __linux__
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
 
 // The way we give the window extra attributes is having a mask, that tells properties we're setting. Each
@@ -113,6 +116,87 @@ rotten_success_code rotten_window_init_xcb(rotten_window_xcb* window, rotten_win
 }
 #endif  //! XCB
 
+#ifndef ROTTEN_WAINDOW_EXCLUDE_WAYLAND
+
+// Wayland has global handles for certain resources like the compositor etc. These resources can be created
+// and and destroyed by the compositor, the server will notify us when this happens, but we first have to
+// register the funcition pointers to handle these events. These are the static functions below, when we
+// register the function pointers with the server we can also give it a user data pointer, this way we can
+// avoid using shared static data and instead recieve a pointer to the rotten-window as a param to these
+// functons.
+static void s_notify_registry(void* data, struct wl_registry* registry, uint32_t id, const char* interface,
+                              uint32_t version)
+{
+    // Cast the user data pointer into our own window
+    rotten_window_wayland* window = (rotten_window_wayland*)data;
+
+    // For right now I'm only interested in the compositor
+    if (!strcmp(interface, "wl_compositor")) {
+        window->extra.compositor = rotten_wl_registry_bind(window->way, window->extra.registry, id,
+                                                           window->way->compositor_interface, 1);
+    }
+}
+
+static void s_notify_registry_remove(void* data, struct wl_registry* registry, uint32_t id)
+{
+    // left blank because what am i supposed to do with this -.-
+}
+
+static const struct wl_registry_listener s_way_listener = {.global = s_notify_registry,
+                                                           .global_remove = s_notify_registry_remove};
+
+rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
+                                               rotten_window_connection* connection,
+                                               rotten_window_definition* definition)
+{
+    // Connect the window handle to the wayland library handle and connect to the display
+    window->way = (rotten_library_wayland*)connection->backend_handle;
+    rotten_library_wayland* way = window->way;
+    rotten_window_wayland_extra* extra = &window->extra;
+
+    extra->display = way->display_connect(NULL);
+    if (extra->display == NULL) {
+        rotten_log_debug(
+          "Somehow couldn't connect to wayland display after previously verifying that it works",
+          e_rotten_log_error);
+        return e_rotten_unclassified_error;
+    }
+
+    // Wayland contains a registry of all the higher level objects, we need to fetch a handle to that registry
+    // first. The resources for the registry object can only be released on client disconnect, not on the
+    // destruction of the registry pointer. So each client should store the registry pointer to minimise mem
+    //
+    // TODO: Can this be null? error handling. There was a typo in this before but it still gave me a pointer,
+    // but the resulting device has no events and so hanged on the dispatch
+    extra->registry = rotten_wl_display_get_registry(way, extra->display);
+
+    // Since this registry proxy is unique to the window, attach the static function pointers called to to
+    // notify us, give it the pointer to the window itself, the statatic function pointers above can then
+    // recieve that window handle as a parameter
+    int err = rotten_wl_registry_add_listener(way, extra->registry, &s_way_listener, window);
+    if (err != 0) {
+        rotten_log("Failed to register a listener, if this fails then we can get stuck in an event loop",
+                   e_rotten_log_error);
+        return e_rotten_unclassified_error;
+    }
+
+    // Perform a thread blocking round trip to get the notifications for all currently attached devices
+    way->display_dispatch(extra->display);
+    way->display_roundtrip(extra->display);
+
+    // Check if we managed to actually create a compositor
+    if (extra->compositor == NULL) {
+        rotten_log("Failed to find a wayland compositor", e_rotten_log_error);
+        return e_rotten_unclassified_error;
+    }
+
+    rotten_log("Created wayland compositor", e_rotten_log_info);
+    return e_rotten_success;
+}
+
+#endif  //! wayland
+#endif  //! Linux
+
 rotten_success_code rotten_window_init(rotten_window* window, rotten_window_connection* connection,
                                        rotten_window_definition* definition)
 {
@@ -129,6 +213,10 @@ rotten_success_code rotten_window_init(rotten_window* window, rotten_window_conn
     if (connection->selected_backend == e_rotten_window_xcb)
         return rotten_window_init_xcb((rotten_window_xcb*)window, connection, definition);
 #endif  //! XCB
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+    if (connection->selected_backend == e_rotten_window_wayland)
+        return rotten_window_init_wayland((rotten_window_wayland*)window, connection, definition);
+#endif  //! wayland
 #endif  //! linux
 
     // Got this far without exiting, looks like we're out of luck
