@@ -28,3 +28,15 @@ void* rotten_wl_registry_bind(rotten_library_wayland* lib, struct wl_registry* r
     return (void*)lib->proxy_marshal_flags((struct wl_proxy*)registry, WL_REGISTRY_BIND, interface, version,
                                            0, id, interface->name, version, NULL);
 }
+
+struct wl_surface* rotten_wl_compositor_create_surface(rotten_library_wayland* lib,
+                                                       struct wl_compositor* compositor)
+{
+    struct wl_proxy* id;
+
+    id = lib->proxy_marshal_flags((struct wl_proxy*)compositor, WL_COMPOSITOR_CREATE_SURFACE,
+                                  lib->surface_interface,
+                                  lib->proxy_get_version((struct wl_proxy*)compositor), 0, NULL);
+
+    return (struct wl_surface*)id;
+}

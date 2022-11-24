@@ -183,10 +183,16 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
     // Perform a thread blocking round trip to get the notifications for all currently attached devices
     way->display_dispatch(extra->display);
     way->display_roundtrip(extra->display);
-
-    // Check if we managed to actually create a compositor
     if (extra->compositor == NULL) {
         rotten_log("Failed to find a wayland compositor", e_rotten_log_error);
+        return e_rotten_unclassified_error;
+    }
+
+    // Now that we have a proxy handle to the global wayland compositor, create a surface which is the
+    // rectangular area of pixels which we actually have control over
+    extra->surface = rotten_wl_compositor_create_surface(way, extra->compositor);
+    if (extra->surface == NULL) {
+        rotten_log("Failed to create a surface", e_rotten_log_error);
         return e_rotten_unclassified_error;
     }
 

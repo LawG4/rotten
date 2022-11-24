@@ -39,13 +39,15 @@ typedef struct rotten_library_wayland {
     // pointers to them. Using the same method as function pointers
     struct wl_interface* registry_interface;
     struct wl_interface* compositor_interface;
+    struct wl_interface* surface_interface;
 
 } rotten_library_wayland;
 
 typedef struct rotten_window_wayland_extra {
-    struct wl_display* display;    // Pointer to the information about the current display
-    struct wl_registry* registry;  // Proxy for the global resource manager
-    struct wl_compositor* compositor;
+    struct wl_display* display;        // Pointer to the information about the current display
+    struct wl_registry* registry;      // Proxy handle to the global resource manager
+    struct wl_compositor* compositor;  // Proxy handle to the global compositor
+    struct wl_surface* surface;        // Current regtangular region of pixels we own
 } rotten_window_wayland_extra;
 
 //
@@ -74,5 +76,9 @@ int rotten_wl_registry_add_listener(rotten_library_wayland* lib, struct wl_regis
 
 void* rotten_wl_registry_bind(rotten_library_wayland* lib, struct wl_registry* registry, uint32_t id,
                               const struct wl_interface* interface, uint32_t version);
+
+struct wl_surface* rotten_wl_compositor_create_surface(rotten_library_wayland* lib,
+                                                       struct wl_compositor* compositor);
+
 ROTTEN_CPP_GUARD_END
 #endif
