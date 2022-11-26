@@ -118,33 +118,6 @@ rotten_success_code rotten_window_init_xcb(rotten_window_xcb* window, rotten_win
 
 #ifndef ROTTEN_WAINDOW_EXCLUDE_WAYLAND
 
-// Wayland has global handles for certain resources like the compositor etc. These resources can be created
-// and and destroyed by the compositor, the server will notify us when this happens, but we first have to
-// register the funcition pointers to handle these events. These are the static functions below, when we
-// register the function pointers with the server we can also give it a user data pointer, this way we can
-// avoid using shared static data and instead recieve a pointer to the rotten-window as a param to these
-// functons.
-static void s_notify_registry(void* data, struct wl_registry* registry, uint32_t id, const char* interface,
-                              uint32_t version)
-{
-    // Cast the user data pointer into our own window
-    rotten_window_wayland* window = (rotten_window_wayland*)data;
-
-    // For right now I'm only interested in the compositor
-    if (!strcmp(interface, "wl_compositor")) {
-        window->extra.compositor = rotten_wl_registry_bind(window->way, window->extra.registry, id,
-                                                           window->way->compositor_interface, 1);
-    }
-}
-
-static void s_notify_registry_remove(void* data, struct wl_registry* registry, uint32_t id)
-{
-    // left blank because what am i supposed to do with this -.-
-}
-
-static const struct wl_registry_listener s_way_listener = {.global = s_notify_registry,
-                                                           .global_remove = s_notify_registry_remove};
-
 rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
                                                rotten_window_connection* connection,
                                                rotten_window_definition* definition)
@@ -169,16 +142,8 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
     // TODO: Can this be null? error handling. There was a typo in this before but it still gave me a pointer,
     // but the resulting device has no events and so hanged on the dispatch
     extra->registry = rotten_wl_display_get_registry(way, extra->display);
-
-    // Since this registry proxy is unique to the window, attach the static function pointers called to to
-    // notify us, give it the pointer to the window itself, the statatic function pointers above can then
-    // recieve that window handle as a parameter
-    int err = rotten_wl_registry_add_listener(way, extra->registry, &s_way_listener, window);
-    if (err != 0) {
-        rotten_log("Failed to register a listener, if this fails then we can get stuck in an event loop",
-                   e_rotten_log_error);
-        return e_rotten_unclassified_error;
-    }
+    rotten_success_code err = rotten_wl_attach_interface_listeners(window);
+    if (err != e_rotten_success) return err;
 
     // Perform a thread blocking round trip to get the notifications for all currently attached devices
     way->display_dispatch(extra->display);

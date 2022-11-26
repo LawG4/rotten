@@ -33,15 +33,6 @@ typedef struct rotten_window_connection {
 } rotten_window_connection;
 
 /**
- * @brief Connects to the host operating system to interogate it for the window's features. This does not
- * launch a window yet, an exmaple use case is a user who wants to check which Vulkan instance extension they
- * should enable at runtime.
- * @param window Pointer to the window to make the operating system connection to
- * @returns Sucess code if rotten was able to connect to the host operating system
- */
-rotten_success_code rotten_window_connect(rotten_window_connection* connection);
-
-/**
  * @brief An opaque pointer used to represent a rotten window handle, so that user's don't have access to the
  * internal elements. For example, it doesn't make sense for a user to have access to the width, height
  * members of a window, as setting those variables won't update the window size without being flushed to the
@@ -63,6 +54,30 @@ typedef struct rotten_window_definition {
     uint32_t height;
     uint8_t fullscreen;
 } rotten_window_definition;
+
+/**
+ * @brief A base struct which holds the information about a window shared between all of the different
+ * windowing system implementations
+ * @note Don't create the struct you're sell it is exclusively used as a member struct for rotten windows and
+ * not designed to be accessed by the user. For example setting the width and height in these structs won't
+ * actually set the size of the window
+ */
+typedef struct rotten_window_base {
+    rotten_window_backend backend;
+    uint8_t remain_open;
+    uint32_t width;
+    uint32_t height;
+    char* title;
+} rotten_window_base;
+
+/**
+ * @brief Connects to the host operating system to interogate it for the window's features. This does not
+ * launch a window yet, an exmaple use case is a user who wants to check which Vulkan instance extension they
+ * should enable at runtime.
+ * @param window Pointer to the window to make the operating system connection to
+ * @returns Sucess code if rotten was able to connect to the host operating system
+ */
+rotten_success_code rotten_window_connect(rotten_window_connection* connection);
 
 /**
  * @brief Calculates the number of bytes the user would have to allocate for a rotten window with the given

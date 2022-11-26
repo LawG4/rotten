@@ -12,6 +12,7 @@
 #include <wayland-client-protocol.h>
 #include "rotten-core.h"
 #include "rotten-dynamic-loading.h"
+#include "rotten-window.h"
 ROTTEN_CPP_GUARD
 
 typedef struct rotten_library_wayland {
@@ -47,8 +48,17 @@ typedef struct rotten_window_wayland_extra {
     struct wl_display* display;        // Pointer to the information about the current display
     struct wl_registry* registry;      // Proxy handle to the global resource manager
     struct wl_compositor* compositor;  // Proxy handle to the global compositor
-    struct wl_surface* surface;        // Current regtangular region of pixels we own
+    struct wl_xdg_base* xdg_base;      // Proxy handle to the cross desktop group describes semantics
+                                       // for application windows
+    struct wl_surface* surface;        // A rectangle which we can display contents to
+
 } rotten_window_wayland_extra;
+
+typedef struct rotten_window_wayland {
+    rotten_window_base base;            // Default information
+    rotten_window_wayland_extra extra;  // Wayland specific information for the window
+    rotten_library_wayland* way;        // handle to the wayland library functions
+} rotten_window_wayland;
 
 //
 // Library runtime loaders
@@ -61,6 +71,20 @@ rotten_success_code rotten_library_wayland_valid_session(rotten_library_wayland*
 rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib);
 
 rotten_success_code rotten_library_wayland_close(rotten_library_wayland* lib);
+
+//
+// Helper functions for working within rotten wayland
+// For example a static ping ponger or interface listener etc...
+//
+
+/**
+ * @brief Attaches the internal static functon to the rotten window's registry and ensures that a pointer to
+ * the window is passed to this function pointer, and this will ensure that the proxies for interfaces can be
+ * given to a rotten window
+ * @param window Pointer to the rotten wayland window
+ * @returns success code.
+ */
+rotten_success_code rotten_wl_attach_interface_listeners(rotten_window_wayland* window);
 
 //
 // Wayland has quite a few static inline functions which use the default symbols. obviously we cant use them
