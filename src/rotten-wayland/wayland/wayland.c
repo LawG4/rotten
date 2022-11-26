@@ -9,6 +9,9 @@
 #define LOAD_WAY_INTERFACE(X) \
     lib->X = (struct wl_interface*)rotten_dynamic_library_fetch(lib->way_lib, "wl_" #X)
 
+// For egl functions
+#define LOAD_EGL_FN(X) lib->X = rotten_dynamic_library_fetch(lib->egl_lib, "wl_" #X)
+
 rotten_success_code rotten_library_wayland_load_min(rotten_library_wayland* lib)
 {
     // Get memset mofo >:(
@@ -22,11 +25,17 @@ rotten_success_code rotten_library_wayland_load_min(rotten_library_wayland* lib)
         return e_rotten_library_not_present;
     }
 
+    lib->egl_lib = rotten_dynamic_library_open("libwayland-egl.so");
+    if (lib->egl_lib == NULL) {
+        rotten_log("Failed to open libwayland-egl.so", e_rotten_log_warning);
+        return e_rotten_library_not_present;
+    }
+
     // Got here, so we have a valid shared library so extract some function pointer.
     LOAD_WAY_FN(display_connect);
     LOAD_WAY_FN(display_disconnect);
 
-    rotten_log_debug("Opened libwayland-client.so", e_rotten_log_info);
+    rotten_log_debug("Opened libwayland-client.so and libwayland-egl.so", e_rotten_log_info);
     return e_rotten_success;
 }
 
@@ -45,6 +54,9 @@ rotten_success_code rotten_library_wayland_valid_session(rotten_library_wayland*
 
 rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib)
 {
+    // EGL functons
+    LOAD_EGL_FN(egl_window_create);
+
     // Registry functions
     LOAD_WAY_FN(display_dispatch);
     LOAD_WAY_FN(display_roundtrip);
@@ -61,7 +73,6 @@ rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib
 
     // Surface functions
     LOAD_WAY_INTERFACE(surface_interface);
-
     return e_rotten_success;
 }
 

@@ -1,3 +1,4 @@
+#include <string.h>
 #include "rotten-wayland.h"
 
 // Wayland has global handles for certain resources like the compositor etc. These resources can be created
@@ -12,12 +13,11 @@ static void s_notify_registry(void* data, struct wl_registry* registry, uint32_t
     // Cast the user data pointer into our own window
     rotten_window_wayland* window = (rotten_window_wayland*)data;
 
-    // For right now I'm only interested in the compositor
+    // Create the compositor proxy
     if (!strcmp(interface, "wl_compositor")) {
         window->extra.compositor = rotten_wl_registry_bind(window->way, window->extra.registry, id,
                                                            window->way->compositor_interface, 1);
-    } else if (!strcmp(interface, "wl_xdg_base")) {
-        (void*)interface;
+        return;
     }
 }
 
