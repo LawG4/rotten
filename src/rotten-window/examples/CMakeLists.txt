@@ -26,6 +26,7 @@ foreach(example ${examples})
 		add_custom_command(TARGET ${example} POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			"$<TARGET_FILE:rotten-wayland-xdg>"
-			"$<TARGET_FILE_DIR:${example}>")
+			"$<TARGET_FILE_DIR:${example}>"
+			COMMENT "Copying rotten-wayland-xdg to ${example}")
 	endif()
 endforeach()

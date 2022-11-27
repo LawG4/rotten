@@ -18,6 +18,10 @@ static void s_notify_registry(void* data, struct wl_registry* registry, uint32_t
         window->extra.compositor = rotten_wl_registry_bind(window->way, window->extra.registry, id,
                                                            window->way->compositor_interface, 1);
         return;
+    } else if (!strcmp(interface, "xdg_wm_base")) {
+        window->extra.wm_base = rotten_wl_registry_bind(window->way, window->extra.registry, id,
+                                                        window->way->fetch_wm_base_interface(), 1);
+        return;
     }
 }
 

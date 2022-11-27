@@ -156,8 +156,8 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
     // Now that we have a proxy handle to the global wayland compositor, create a surface which is the
     // rectangular area of pixels which we actually have control over
     extra->surface = rotten_wl_compositor_create_surface(way, extra->compositor);
-    if (extra->surface == NULL) {
-        rotten_log("Failed to create a surface", e_rotten_log_error);
+    if (extra->surface == NULL || extra->wm_base == NULL) {
+        rotten_log("Failed to fetch a proxy to required interface", e_rotten_log_error);
         return e_rotten_unclassified_error;
     }
 

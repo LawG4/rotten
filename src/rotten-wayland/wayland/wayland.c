@@ -9,8 +9,10 @@
 #define LOAD_WAY_INTERFACE(X) \
     lib->X = (struct wl_interface*)rotten_dynamic_library_fetch(lib->way_lib, "wl_" #X)
 
-// For egl functions
-#define LOAD_EGL_FN(X) lib->X = rotten_dynamic_library_fetch(lib->egl_lib, "wl_" #X)
+// For xdg functions
+#define LOAD_XDG_FN(X) lib->X = rotten_dynamic_library_fetch(lib->xdg_lib, "xdg_" #X)
+#define LOAD_XDG_INTERFACE(X) \
+    lib->X = (struct wl_interface*)rotten_dynamic_library_fetch(lib->xdg_lib, "xdg_" #X)
 
 rotten_success_code rotten_library_wayland_load_min(rotten_library_wayland* lib)
 {
@@ -25,11 +27,18 @@ rotten_success_code rotten_library_wayland_load_min(rotten_library_wayland* lib)
         return e_rotten_library_not_present;
     }
 
+    // Open librotten-wayland-xdg.so
+    lib->xdg_lib = rotten_dynamic_library_open("./librotten-wayland-xdg.so");
+    if (lib->xdg_lib == NULL) {
+        rotten_log("Failed to open librotten-wayland-xdg.so", e_rotten_log_warning);
+        return e_rotten_library_not_present;
+    }
+
     // Got here, so we have a valid shared library so extract some function pointer.
     LOAD_WAY_FN(display_connect);
     LOAD_WAY_FN(display_disconnect);
 
-    rotten_log_debug("Opened libwayland-client.so and libwayland-egl.so", e_rotten_log_info);
+    rotten_log_debug("Opened libwayland-client.so and librotten-wayland-xdg.so", e_rotten_log_info);
     return e_rotten_success;
 }
 
@@ -64,6 +73,9 @@ rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib
 
     // Surface functions
     LOAD_WAY_INTERFACE(surface_interface);
+
+    // Get the xdg functions
+    lib->fetch_wm_base_interface = dlsym(lib->xdg_lib, "rotten_wl_fetch_wm_base_interface");
     return e_rotten_success;
 }
 

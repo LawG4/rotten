@@ -25,6 +25,9 @@ typedef struct rotten_library_wayland {
     // Native linux handle for libwayland-client.so
     rotten_dynamic_library* way_lib;
 
+    // Native linux handle for lib librotten-wayland-xdg.so
+    rotten_dynamic_library* xdg_lib;
+
     //
     // Function pointer table
     //
@@ -50,6 +53,8 @@ typedef struct rotten_library_wayland {
     struct wl_interface* registry_interface;
     struct wl_interface* compositor_interface;
     struct wl_interface* surface_interface;
+    // xdg interface can only be gotten with the special function
+    const struct wl_interface* (*fetch_wm_base_interface)();
 
 } rotten_library_wayland;
 
@@ -58,10 +63,9 @@ typedef struct rotten_window_wayland_extra {
     struct wl_registry* registry;      // Proxy handle to the global resource manager
     struct wl_compositor* compositor;  // Proxy handle to the global compositor
     struct wl_shell* shell;            // Proxy handle to the shell system
+    struct xdm_wm_base* wm_base;       // Proxy handle to the window manager roles
 
-    struct wl_surface* surface;        // A rectangle which we can display contents to
-    struct wl_egl_window* egl_window;  // Pointer to the window containing the surface
-
+    struct wl_surface* surface;  // A rectangle which we can display contents to
 } rotten_window_wayland_extra;
 
 typedef struct rotten_window_wayland {

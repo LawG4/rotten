@@ -58,6 +58,12 @@ endif()
 # Okay! now we have generated the files add them to a build system!
 add_library(rotten-wayland-xdg SHARED 
 	generated/xdg-shell-protocol.c
-	generated/xdg-shell-client-protocol.h)
+	generated/xdg-shell-client-protocol.h
+
+	interface/xdg-interface.c)
+
+# Add the rotten-wayland-xdg header file to publish the functions
+target_include_directories(rotten-wayland-xdg PUBLIC 
+	${CMAKE_CURRENT_LIST_DIR}/../../inc/rotten)
 
 target_link_libraries(rotten-wayland-xdg PRIVATE "wayland-client")
