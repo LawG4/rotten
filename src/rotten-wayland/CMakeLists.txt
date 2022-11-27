@@ -18,11 +18,14 @@ add_library(rotten-wayland
 	wayland/wl-inline-replacement.c
 	wayland/interface-proxies.c)
 
-
 # Add in rotten core
 add_subdirectory(../rotten-core core)
 target_link_libraries(rotten-wayland PRIVATE rotten-core)
 target_include_directories(rotten-wayland PUBLIC 
 	${CMAKE_CURRENT_LIST_DIR}/../../inc/rotten)
+
+# Add in the rotten-wayland-xdg
+# But we don't link to it, we just need it in the build system
+add_subdirectory(../rotten-wayland-xdg xdg)
 
 # No examples for rotten wayland
