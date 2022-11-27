@@ -24,15 +24,10 @@ ROTTEN_CPP_GUARD
 typedef struct rotten_library_wayland {
     // Native linux handle for libwayland-client.so
     rotten_dynamic_library* way_lib;
-    // Native linux handle for libwayland-egl.so
-    rotten_dynamic_library* egl_lib;
 
     //
     // Function pointer table
     //
-
-    // EGL functions
-    struct wl_egl_window* (*egl_window_create)(struct wl_surface* surface, int width, int height);
 
     // Display functions
     struct wl_display* (*display_connect)(const char*);
@@ -118,6 +113,8 @@ void* rotten_wl_registry_bind(rotten_library_wayland* lib, struct wl_registry* r
 
 struct wl_surface* rotten_wl_compositor_create_surface(rotten_library_wayland* lib,
                                                        struct wl_compositor* compositor);
+
+void rotten_wl_surface_commit(rotten_library_wayland* lib, struct wl_surface* wl_surface);
 
 ROTTEN_CPP_GUARD_END
 #endif

@@ -161,13 +161,6 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
         return e_rotten_unclassified_error;
     }
 
-    // USe the surface handle to create an egl window
-    extra->egl_window = way->egl_window_create(extra->surface, definition->width, definition->height);
-    if (extra->egl_window == NULL) {
-        rotten_log("Failed to create an egl window with wayland", e_rotten_log_error);
-        return e_rotten_unclassified_error;
-    }
-
     rotten_log("Created wayland compositor", e_rotten_log_info);
     return e_rotten_success;
 }

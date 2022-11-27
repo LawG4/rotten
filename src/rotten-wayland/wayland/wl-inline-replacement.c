@@ -40,3 +40,9 @@ struct wl_surface* rotten_wl_compositor_create_surface(rotten_library_wayland* l
 
     return (struct wl_surface*)id;
 }
+
+void rotten_wl_surface_commit(rotten_library_wayland* lib, struct wl_surface* wl_surface)
+{
+    lib->proxy_marshal_flags((struct wl_proxy*)wl_surface, WL_SURFACE_COMMIT, NULL,
+                             lib->proxy_get_version((struct wl_proxy*)wl_surface), 0);
+}

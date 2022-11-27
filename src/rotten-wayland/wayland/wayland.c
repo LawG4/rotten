@@ -25,12 +25,6 @@ rotten_success_code rotten_library_wayland_load_min(rotten_library_wayland* lib)
         return e_rotten_library_not_present;
     }
 
-    lib->egl_lib = rotten_dynamic_library_open("libwayland-egl.so");
-    if (lib->egl_lib == NULL) {
-        rotten_log("Failed to open libwayland-egl.so", e_rotten_log_warning);
-        return e_rotten_library_not_present;
-    }
-
     // Got here, so we have a valid shared library so extract some function pointer.
     LOAD_WAY_FN(display_connect);
     LOAD_WAY_FN(display_disconnect);
@@ -54,9 +48,6 @@ rotten_success_code rotten_library_wayland_valid_session(rotten_library_wayland*
 
 rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib)
 {
-    // EGL functons
-    LOAD_EGL_FN(egl_window_create);
-
     // Registry functions
     LOAD_WAY_FN(display_dispatch);
     LOAD_WAY_FN(display_roundtrip);
