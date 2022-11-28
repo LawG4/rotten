@@ -6,7 +6,7 @@ static struct xdg_surface *rotten_wl_wm_base_get_xdg_surface(rotten_library_wayl
                                                              struct wl_surface *surface)
 {
     return (struct xdg_surface *)way->proxy_marshal_flags(
-      (struct wl_proxy *)xdg_wm_base, XDG_WM_BASE_GET_XDG_SURFACE, way->fetch_xdg_surface_interface(),
+      (struct wl_proxy *)xdg_wm_base, XDG_WM_BASE_GET_XDG_SURFACE, way->xdg_surface_interface,
       way->proxy_get_version((struct wl_proxy *)xdg_wm_base), 0, NULL, surface);
 }
 
@@ -14,7 +14,7 @@ static struct xdg_toplevel *rotten_wl_surface_get_toplevel(rotten_library_waylan
                                                            struct xdg_surface *surface)
 {
     return (struct xdg_toplevel *)way->proxy_marshal_flags(
-      (struct wl_proxy *)surface, XDG_SURFACE_GET_TOPLEVEL, way->fetch_xdg_toplevel_interface(),
+      (struct wl_proxy *)surface, XDG_SURFACE_GET_TOPLEVEL, way->xdg_toplevel_interface,
       way->proxy_get_version((struct wl_proxy *)surface), 0, NULL);
 }
 

@@ -132,13 +132,6 @@ typedef struct rotten_library_wayland {
     const struct wl_interface* xdg_surface_interface;
     const struct wl_interface* xdg_toplevel_interface;
 
-    // The xdg interfaces all seem to be const, so we cant get a library pointer without loosing the const
-    // qualifier, so instead we fetch a function pointer from rotten-wayland-xdg which returns the const
-    // pointer for all the interfaces within xdg
-    const struct wl_interface* (*fetch_xdg_wm_base_interface)();
-    const struct wl_interface* (*fetch_xdg_surface_interface)();
-    const struct wl_interface* (*fetch_xdg_toplevel_interface)();
-
 } rotten_library_wayland;
 
 ROTTEN_CPP_GUARD_END
