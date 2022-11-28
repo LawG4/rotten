@@ -21,42 +21,10 @@
 #include "rotten-window.h"
 ROTTEN_CPP_GUARD
 
-typedef struct rotten_library_wayland {
-    // Native linux handle for libwayland-client.so
-    rotten_dynamic_library* way_lib;
-
-    // Native linux handle for lib librotten-wayland-xdg.so
-    rotten_dynamic_library* xdg_lib;
-
-    //
-    // Function pointer table
-    //
-
-    // Display functions
-    struct wl_display* (*display_connect)(const char*);
-    void (*display_disconnect)(struct wl_display*);
-    int (*display_dispatch)(struct wl_display* display);
-    int (*display_roundtrip)(struct wl_display* display);
-
-    // Proxy functions
-    uint32_t (*proxy_get_version)(struct wl_proxy* prozy);
-    struct wl_proxy* (*proxy_marshal_flags)(struct wl_proxy*, uint32_t opcode,
-                                            const struct wl_interface* interface, uint32_t version,
-                                            uint32_t flags, ...);
-    int (*proxy_add_listener)(struct wl_proxy*, void (**implementation)(void), void* data);
-
-    // Compositor functions
-    struct wl_surface* (*compositor_create_surface)(struct wl_compositor* compositor);
-
-    // Pointer to a const structs which are exported const symbols from the wayland library, we instead fetch
-    // pointers to them. Using the same method as function pointers
-    struct wl_interface* registry_interface;
-    struct wl_interface* compositor_interface;
-    struct wl_interface* surface_interface;
-    // xdg interface can only be gotten with the special function
-    const struct wl_interface* (*fetch_wm_base_interface)();
-
-} rotten_library_wayland;
+// The library struct is pretty massive, forward declare it and define it the bottom of the file
+typedef struct rotten_library_wayland rotten_library_wayland;
+struct xdg_toplevel;
+struct xdg_wm_base;
 
 typedef struct rotten_window_wayland_extra {
     struct wl_display* display;        // Pointer to the information about the current display
@@ -65,13 +33,15 @@ typedef struct rotten_window_wayland_extra {
     struct wl_shell* shell;            // Proxy handle to the shell system
     struct xdm_wm_base* wm_base;       // Proxy handle to the window manager roles
 
-    struct wl_surface* surface;  // A rectangle which we can display contents to
+    struct wl_surface* surface;         // A rectangle which we can display contents to
+    struct xdg_surface* xdg_surface;    // A derivative object for the surface to comunicate with wm
+    struct xdg_toplevel* xdg_toplevel;  // wm top level roll
 } rotten_window_wayland_extra;
 
 typedef struct rotten_window_wayland {
-    rotten_window_base base;            // Default information
-    rotten_window_wayland_extra extra;  // Wayland specific information for the window
-    rotten_library_wayland* way;        // handle to the wayland library functions
+    rotten_window_base base;             // Default information
+    rotten_window_wayland_extra extra;   // Wayland specific information for the window
+    struct rotten_library_wayland* way;  // handle to the wayland library functions
 } rotten_window_wayland;
 
 //
@@ -119,6 +89,57 @@ struct wl_surface* rotten_wl_compositor_create_surface(rotten_library_wayland* l
                                                        struct wl_compositor* compositor);
 
 void rotten_wl_surface_commit(rotten_library_wayland* lib, struct wl_surface* wl_surface);
+
+typedef struct rotten_library_wayland {
+    // Native linux handle for libwayland-client.so
+    rotten_dynamic_library* way_lib;
+
+    // Native linux handle for lib librotten-wayland-xdg.so
+    rotten_dynamic_library* xdg_lib;
+
+    //
+    // Function pointer table
+    //
+
+    // Display functions
+    struct wl_display* (*display_connect)(const char*);
+    void (*display_disconnect)(struct wl_display*);
+    int (*display_dispatch)(struct wl_display* display);
+    int (*display_roundtrip)(struct wl_display* display);
+    struct wl_surface* (*compositor_create_surface)(struct wl_compositor* compositor);
+    // Proxy functions
+    uint32_t (*proxy_get_version)(struct wl_proxy* prozy);
+    struct wl_proxy* (*proxy_marshal_flags)(struct wl_proxy*, uint32_t opcode,
+                                            const struct wl_interface* interface, uint32_t version,
+                                            uint32_t flags, ...);
+    int (*proxy_add_listener)(struct wl_proxy*, void (**implementation)(void), void* data);
+
+    // xdg function pointers
+    struct xdg_surface* (*xdg_wm_base_get_xdg_surface)(struct rotten_library_wayland* way,
+                                                       struct xdg_wm_base* xdg_wm_base,
+                                                       struct wl_surface* surface);
+    struct xdg_toplevel* (*xdg_surface_get_toplevel)(struct rotten_library_wayland* way,
+                                                     struct xdg_surface* surface);
+    void (*xdg_toplevel_set_title)(struct rotten_library_wayland* way, struct xdg_toplevel* xdg_toplevel,
+                                   const char* title);
+
+    // Pointer to a const structs which are exported const symbols from the wayland library, we instead fetch
+    // pointers to them. Using the same method as function pointers
+    struct wl_interface* registry_interface;
+    struct wl_interface* compositor_interface;
+    struct wl_interface* surface_interface;
+    const struct wl_interface* xdg_wm_base_interface;
+    const struct wl_interface* xdg_surface_interface;
+    const struct wl_interface* xdg_toplevel_interface;
+
+    // The xdg interfaces all seem to be const, so we cant get a library pointer without loosing the const
+    // qualifier, so instead we fetch a function pointer from rotten-wayland-xdg which returns the const
+    // pointer for all the interfaces within xdg
+    const struct wl_interface* (*fetch_xdg_wm_base_interface)();
+    const struct wl_interface* (*fetch_xdg_surface_interface)();
+    const struct wl_interface* (*fetch_xdg_toplevel_interface)();
+
+} rotten_library_wayland;
 
 ROTTEN_CPP_GUARD_END
 #endif
