@@ -31,7 +31,7 @@ typedef struct rotten_window_wayland_extra {
     struct wl_registry* registry;      // Proxy handle to the global resource manager
     struct wl_compositor* compositor;  // Proxy handle to the global compositor
     struct wl_shell* shell;            // Proxy handle to the shell system
-    struct xdm_wm_base* wm_base;       // Proxy handle to the window manager roles
+    struct xdg_wm_base* wm_base;       // Proxy handle to the window manager roles
 
     struct wl_surface* surface;         // A rectangle which we can display contents to
     struct xdg_surface* xdg_surface;    // A derivative object for the surface to comunicate with wm

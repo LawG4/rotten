@@ -148,18 +148,22 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
     // Perform a thread blocking round trip to get the notifications for all currently attached devices
     way->display_dispatch(extra->display);
     way->display_roundtrip(extra->display);
-    if (extra->compositor == NULL) {
-        rotten_log("Failed to find a wayland compositor", e_rotten_log_error);
+    if (extra->compositor == NULL || extra->wm_base == NULL) {
+        rotten_log("Failed to fetch proxy handle for a required interface", e_rotten_log_error);
         return e_rotten_unclassified_error;
     }
 
     // Now that we have a proxy handle to the global wayland compositor, create a surface which is the
     // rectangular area of pixels which we actually have control over
     extra->surface = rotten_wl_compositor_create_surface(way, extra->compositor);
-    if (extra->surface == NULL || extra->wm_base == NULL) {
+    if (extra->surface == NULL) {
         rotten_log("Failed to fetch a proxy to required interface", e_rotten_log_error);
         return e_rotten_unclassified_error;
     }
+
+    // From the surface now derive the xdg structs
+    extra->xdg_surface = way->xdg_wm_base_get_xdg_surface(way, extra->wm_base, extra->surface);
+    extra->xdg_toplevel = way->xdg_surface_get_toplevel(way, extra->xdg_surface);
 
     rotten_log("Created wayland compositor", e_rotten_log_info);
     return e_rotten_success;
