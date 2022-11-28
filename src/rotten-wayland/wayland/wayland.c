@@ -74,8 +74,18 @@ rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib
     // Surface functions
     LOAD_WAY_INTERFACE(surface_interface);
 
-    // Get the xdg functions
-    lib->fetch_wm_base_interface = dlsym(lib->xdg_lib, "rotten_wl_fetch_wm_base_interface");
+    // Get the xdg functions, we have one function inside the rotten-wayland-xdg library which fills in the
+    // function pointers for you, fetch that function from the library, use it to fill the library and close
+    // it.
+    void (*local_xdg_fill_struct)(rotten_library_wayland * way_lib) =
+      dlsym(lib->xdg_lib, "rotten_wl_xdg_fill_struct");
+
+    if (local_xdg_fill_struct == NULL) {
+        rotten_log("Failed to fetch function pointers from xdg helper", e_rotten_log_warning);
+        return e_rotten_library_not_present;
+    }
+
+    local_xdg_fill_struct(lib);
     return e_rotten_success;
 }
 

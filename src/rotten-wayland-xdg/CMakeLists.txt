@@ -59,8 +59,10 @@ endif()
 add_library(rotten-wayland-xdg SHARED 
 	generated/xdg-shell-protocol.c
 	generated/xdg-shell-client-protocol.h
-
-	interface/xdg-interface.c)
+	
+	xdg/filler.c
+	xdg/xdg-interface.c
+	xdg/dispatch.c)
 
 # Add the rotten-wayland-xdg header file to publish the functions
 target_include_directories(rotten-wayland-xdg PUBLIC 
