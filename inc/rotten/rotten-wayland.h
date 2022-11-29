@@ -23,6 +23,7 @@ ROTTEN_CPP_GUARD
 
 // The library struct is pretty massive, forward declare it and define it the bottom of the file
 typedef struct rotten_library_wayland rotten_library_wayland;
+struct xdg_wm_base_listener;
 struct xdg_toplevel;
 struct xdg_wm_base;
 
@@ -122,6 +123,9 @@ typedef struct rotten_library_wayland {
                                                      struct xdg_surface* surface);
     void (*xdg_toplevel_set_title)(struct rotten_library_wayland* way, struct xdg_toplevel* xdg_toplevel,
                                    const char* title);
+    void (*xdg_wm_base_pong)(rotten_library_wayland* way, struct xdg_wm_base* xdg_wm_base, uint32_t serial);
+    int (*xdg_wm_base_add_listener)(rotten_library_wayland* way, struct xdg_wm_base* xdg_wm_base,
+                                    const struct xdg_wm_base_listener* listener, void* data);
 
     // Pointer to a const structs which are exported const symbols from the wayland library, we instead fetch
     // pointers to them. Using the same method as function pointers
@@ -131,6 +135,7 @@ typedef struct rotten_library_wayland {
     const struct wl_interface* xdg_wm_base_interface;
     const struct wl_interface* xdg_surface_interface;
     const struct wl_interface* xdg_toplevel_interface;
+    const struct xdg_wm_base_listener* xdg_wm_base_listener;
 
 } rotten_library_wayland;
 

@@ -19,8 +19,12 @@ static void s_notify_registry(void* data, struct wl_registry* registry, uint32_t
                                                            window->way->compositor_interface, 1);
         return;
     } else if (!strcmp(interface, "xdg_wm_base")) {
+        // When we want to get a proxy for the window handle, we also want to attach the heart beat ping
+        // ponging function, so that the window manager knows we're alive
         window->extra.wm_base = rotten_wl_registry_bind(window->way, window->extra.registry, id,
                                                         window->way->xdg_wm_base_interface, 1);
+        window->way->xdg_wm_base_add_listener(window->way, window->extra.wm_base,
+                                              window->way->xdg_wm_base_listener, window);
         return;
     }
 }
