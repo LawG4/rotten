@@ -134,6 +134,7 @@ typedef struct rotten_library_wayland {
     struct wl_interface* registry_interface;
     struct wl_interface* compositor_interface;
     struct wl_interface* surface_interface;
+    const struct wl_interface* shm_interface;
     const struct wl_interface* xdg_wm_base_interface;
     const struct wl_interface* xdg_surface_interface;
     const struct wl_interface* xdg_toplevel_interface;
