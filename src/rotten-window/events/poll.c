@@ -21,13 +21,6 @@ uint8_t rotten_window_remain_open(rotten_window* window)
 //
 
 #ifdef __linux__
-#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
-void rotten_window_poll_events_wayland(rotten_window_xcb* xcb)
-{
-    rotten_log_debug("Not implemented for wayland", e_rotten_log_error);
-}
-#endif  // !Wayland
-
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
 void rotten_window_poll_events_xcb(rotten_window_xcb* window)
 {
@@ -88,7 +81,16 @@ void rotten_window_poll_events_xcb(rotten_window_xcb* window)
         event = xcb->poll_for_event(extra->connection, &xcb_err);
     }
 }
+
 #endif  // | XCB
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+void rotten_window_poll_events_wayland(rotten_window_wayland* window)
+{
+    // TODO: This operation is deadlocking!! Fix this by peaking for events instead
+    while (window->way->display_dispatch(window->extra.display)) {
+    };
+}
+#endif  // !Wayland
 #endif  // ! linux
 
 //
@@ -100,12 +102,6 @@ void rotten_window_poll_events(rotten_window* window)
     rotten_window_base* base = (rotten_window_base*)window;
 
 #ifdef __linux__
-#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
-    if (base->backend == e_rotten_window_wayland) {
-        return;
-    }
-#endif  // !Wayland
-
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
     // Poll the xcb events for the window
     if (base->backend == e_rotten_window_xcb) {
@@ -113,5 +109,11 @@ void rotten_window_poll_events(rotten_window* window)
         return;
     }
 #endif  // ! XCB
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+    if (base->backend == e_rotten_window_wayland) {
+        rotten_window_poll_events_wayland((rotten_window_wayland*)window);
+        return;
+    }
+#endif  // !Wayland
 #endif  // !_linux
 }

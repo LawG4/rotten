@@ -108,6 +108,7 @@ typedef struct rotten_library_wayland {
     int (*display_dispatch)(struct wl_display* display);
     int (*display_roundtrip)(struct wl_display* display);
     struct wl_surface* (*compositor_create_surface)(struct wl_compositor* compositor);
+
     // Proxy functions
     uint32_t (*proxy_get_version)(struct wl_proxy* prozy);
     struct wl_proxy* (*proxy_marshal_flags)(struct wl_proxy*, uint32_t opcode,

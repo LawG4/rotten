@@ -41,6 +41,5 @@ void rotten_wl_xdg_attach_listener_pointers(rotten_library_wayland *lib)
 {
     lib->xdg_wm_base_pong = &rotten_wl_xdg_wm_base_pong;
     lib->xdg_wm_base_listener = &s_xdg_wm_base_listener;
-
     lib->xdg_wm_base_add_listener = &rotten_wl_xdg_wm_base_add_listener;
 }

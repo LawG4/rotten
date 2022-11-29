@@ -18,7 +18,15 @@ rotten_success_code rotten_window_show_xcb(rotten_window_xcb* window)
     return e_rotten_success;
 }
 #endif  //! xcb
-
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+rotten_success_code rotten_window_show_wayland(rotten_window_wayland* window)
+{
+    // Commit changes
+    // TODO: Handle errors somehow?
+    rotten_wl_surface_commit(window->way, window->extra.surface);
+    return e_rotten_success;
+}
+#endif  // !wayland
 #endif  //! linux
 
 rotten_success_code rotten_window_show(rotten_window* window)
@@ -31,8 +39,13 @@ rotten_success_code rotten_window_show(rotten_window* window)
 #ifdef __linux__
 #ifndef ROTTEN_WINDOW_EXCLUDE_XCB
     if (base->backend == e_rotten_window_xcb) return rotten_window_show_xcb((rotten_window_xcb*)window);
-
 #endif  // !xcb
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+    if (base->backend == e_rotten_window_wayland)
+        return rotten_window_show_wayland((rotten_window_wayland*)window);
+#endif  // !wayland
 #endif  // !linux
+
+    // Got here without encountering a known backend so exit
     return e_rotten_unimplemented;
 }
