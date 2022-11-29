@@ -74,6 +74,9 @@ rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib
     // Surface functions
     LOAD_WAY_INTERFACE(surface_interface);
 
+    // Shared memory functions
+    LOAD_WAY_INTERFACE(shm_interface);
+
     // Get the xdg functions, we have one function inside the rotten-wayland-xdg library which fills in the
     // function pointers for you, fetch that function from the library, use it to fill the library and close
     // it.
