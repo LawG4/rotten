@@ -32,5 +32,15 @@ ROTTEN_CPP_GUARD
 void rotten_wl_ext_fill_struct(rotten_library_wayland* lib);
 typedef void (*rotten_wl_ext_fill_struct_fp)(rotten_library_wayland* lib);
 
+typedef struct rotten_wl_shm_pool {
+    struct wl_shm_pool* pool;
+    size_t pool_size;
+    int file_descriptor;
+    uint8_t* ptr;
+} rotten_wl_shm_pool;
+
+rotten_wl_shm_pool rotten_wl_shm_create_pool(struct wl_shm* shm, uint32_t size);
+void rotten_wl_shm_destroy_pool(rotten_wl_shm_pool* pool);
+
 ROTTEN_CPP_GUARD_END
 #endif

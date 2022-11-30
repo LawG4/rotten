@@ -63,7 +63,9 @@ add_library(rotten-wayland-xdg SHARED
 	xdg/filler.c
 	xdg/xdg-interface.c
 	xdg/dispatch.c
-	xdg/listener.c)
+	xdg/listener.c
+	
+	buffers/shm.c)
 
 # Add the rotten-wayland-xdg header file to publish the functions
 target_include_directories(rotten-wayland-xdg PUBLIC 
