@@ -22,12 +22,12 @@ foreach(example ${examples})
 
 	# If the file has a rotten-wayland component then we need to copy the rotten-wayland-xdg
 	# shared library into the binary output directory of the example so it can be loaded at runtime
-	if(TARGET rotten-wayland-xdg)
+	if(TARGET rotten-wayland-ext)
 		add_custom_command(TARGET ${example} POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			"$<TARGET_FILE:rotten-wayland-xdg>"
+			"$<TARGET_FILE:rotten-wayland-ext>"
 			"$<TARGET_FILE_DIR:${example}>"
-			COMMENT "Copying rotten-wayland-xdg to ${example}"
-			DEPENDS rotten-wayland-xdg)
+			COMMENT "Copying rotten-wayland-ext to ${example}"
+			DEPENDS rotten-wayland-ext)
 	endif()
 endforeach()

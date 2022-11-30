@@ -11,7 +11,7 @@ if(TARGET rotten-wayland-xdg OR NOT TARGET rotten-wayland)
 	return()
 endif()
 project(rotten-wayland-xdg VERSION 0.0.1 LANGUAGES C)
-message(STATUS "Adding rotten wayland xdg support")
+message(STATUS "Adding rotten wayland extensions support")
 
 # Check if the private xdg sources have been created or not.
 if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/generated/xdg-shell-protocol.c)
@@ -56,7 +56,7 @@ if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/generated/xdg-shell-protocol.c)
 endif()
 
 # Okay! now we have generated the files add them to a build system!
-add_library(rotten-wayland-xdg SHARED 
+add_library(rotten-wayland-ext SHARED 
 	generated/xdg-shell-protocol.c
 	generated/xdg-shell-client-protocol.h
 	
@@ -68,7 +68,7 @@ add_library(rotten-wayland-xdg SHARED
 	buffers/shm.c)
 
 # Add the rotten-wayland-xdg header file to publish the functions
-target_include_directories(rotten-wayland-xdg PUBLIC 
+target_include_directories(rotten-wayland-ext PUBLIC 
 	${CMAKE_CURRENT_LIST_DIR}/../../inc/rotten)
 
-target_link_libraries(rotten-wayland-xdg PRIVATE "wayland-client")
+target_link_libraries(rotten-wayland-ext PRIVATE "wayland-client")

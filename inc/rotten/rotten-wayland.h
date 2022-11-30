@@ -100,7 +100,7 @@ typedef struct rotten_library_wayland {
     rotten_dynamic_library* way_lib;
 
     // Native linux handle for lib librotten-wayland-xdg.so
-    rotten_dynamic_library* xdg_lib;
+    rotten_dynamic_library* ext_lib;
 
     //
     // Function pointer table
