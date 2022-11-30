@@ -1,4 +1,5 @@
 #include "../generated/xdg-shell-client-protocol.h"
+#include "rotten-wayland-ext.h"
 #include "rotten-wayland.h"
 
 // Exposing the listener struct has multiple members it's not an opaque pointer or incomplete struct class so
