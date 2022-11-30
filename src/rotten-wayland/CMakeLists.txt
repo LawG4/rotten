@@ -26,6 +26,6 @@ target_include_directories(rotten-wayland PUBLIC
 
 # Add in the rotten-wayland-xdg
 # But we don't link to it, we just need it in the build system
-add_subdirectory(../rotten-wayland-xdg xdg)
+add_subdirectory(../rotten-wayland-ext wayland-ext)
 
 # No examples for rotten wayland
