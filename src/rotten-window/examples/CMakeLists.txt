@@ -27,6 +27,7 @@ foreach(example ${examples})
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			"$<TARGET_FILE:rotten-wayland-xdg>"
 			"$<TARGET_FILE_DIR:${example}>"
-			COMMENT "Copying rotten-wayland-xdg to ${example}")
+			COMMENT "Copying rotten-wayland-xdg to ${example}"
+			DEPENDS rotten-wayland-xdg)
 	endif()
 endforeach()

@@ -72,6 +72,9 @@ rotten_success_code rotten_library_wayland_close(rotten_library_wayland* lib);
  */
 rotten_success_code rotten_wl_attach_interface_listeners(rotten_window_wayland* window);
 
+struct xdg_surface_listener;
+struct xdg_toplevel_listener;
+
 //
 // Wayland has quite a few static inline functions which use the default symbols. obviously we cant use them
 // as they will through a linking error, so provide the most scuffed wrapper ever. They will be
@@ -128,9 +131,13 @@ typedef struct rotten_library_wayland {
     void (*xdg_wm_base_pong)(rotten_library_wayland* way, struct xdg_wm_base* xdg_wm_base, uint32_t serial);
     int (*xdg_wm_base_add_listener)(rotten_library_wayland* way, struct xdg_wm_base* xdg_wm_base,
                                     const struct xdg_wm_base_listener* listener, void* data);
+    int (*xdg_surface_add_listener)(struct xdg_surface* xdg_surface,
+                                    const struct xdg_surface_listener* listener, void* data);
+    int (*xdg_toplevel_add_listener)(struct xdg_toplevel* xdg_toplevel,
+                                     const struct xdg_toplevel_listener* listener, void* data);
 
-    // Pointer to a const structs which are exported const symbols from the wayland library, we instead fetch
-    // pointers to them. Using the same method as function pointers
+    // Pointer to a const structs which are exported const symbols from the wayland library, we instead
+    // fetch pointers to them. Using the same method as function pointers
     struct wl_interface* registry_interface;
     struct wl_interface* compositor_interface;
     struct wl_interface* surface_interface;
@@ -139,6 +146,8 @@ typedef struct rotten_library_wayland {
     const struct wl_interface* xdg_surface_interface;
     const struct wl_interface* xdg_toplevel_interface;
     const struct xdg_wm_base_listener* xdg_wm_base_listener;
+    const struct xdg_surface_listener* xdg_surface_listener;
+    const struct xdg_toplevel_listener* xdg_toplevel_listener;
 
 } rotten_library_wayland;
 

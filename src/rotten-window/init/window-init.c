@@ -161,11 +161,13 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
         return e_rotten_unclassified_error;
     }
 
-    // From the surface now derive the xdg structs
+    // From the surface now derive the xdg structs and attach a listener to the surface which will allocate a
+    // buffer large enough to contain all of the pixels in the window
     extra->xdg_surface = way->xdg_wm_base_get_xdg_surface(way, extra->wm_base, extra->surface);
+    way->xdg_surface_add_listener(extra->xdg_surface, way->xdg_surface_listener, window);
     extra->xdg_toplevel = way->xdg_surface_get_toplevel(way, extra->xdg_surface);
 
-    rotten_log("Created wayland compositor", e_rotten_log_info);
+    rotten_log("Created wayland window", e_rotten_log_info);
     return e_rotten_success;
 }
 
