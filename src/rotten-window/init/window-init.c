@@ -166,6 +166,7 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
     extra->xdg_surface = way->xdg_wm_base_get_xdg_surface(way, extra->wm_base, extra->surface);
     way->xdg_surface_add_listener(extra->xdg_surface, way->xdg_surface_listener, window);
     extra->xdg_toplevel = way->xdg_surface_get_toplevel(way, extra->xdg_surface);
+    way->xdg_toplevel_add_listener(extra->xdg_toplevel, way->xdg_toplevel_listener, window);
 
     rotten_log("Created wayland window", e_rotten_log_info);
     return e_rotten_success;

@@ -91,15 +91,14 @@ static void s_xdg_toplevel_handle_configure(void *data, struct xdg_toplevel *xdg
         window->base.width = w;
         window->base.height = h;
 
-        rotten_wl_surface_commit(window->way, window->extra.surface);
+        wl_surface_commit(window->extra.surface);
     }
-
-    rotten_wl_surface_commit(window->way, window->extra.surface);
 }
 
 static void s_xdg_toplevel_handle_close(void *data, struct xdg_toplevel *xdg_toplevel)
 {
     //  Left blank
+    ((rotten_window_wayland *)data)->base.remain_open = 0;
 }
 
 struct xdg_toplevel_listener s_xdg_toplevel_listener = {

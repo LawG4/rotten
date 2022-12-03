@@ -86,9 +86,9 @@ void rotten_window_poll_events_xcb(rotten_window_xcb* window)
 #ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
 void rotten_window_poll_events_wayland(rotten_window_wayland* window)
 {
-    // TODO: This operation is deadlocking!! Fix this by peaking for events instead
-    while (window->way->display_dispatch(window->extra.display)) {
-    };
+    // TODO: TThere's a notice about using the dispatch pending instead. It seems doing this dispatch can
+    // actually cause other events to happen or something? I'm honestly not sure
+    window->way->display_dispatch(window->extra.display);
 }
 #endif  // !Wayland
 #endif  // ! linux
