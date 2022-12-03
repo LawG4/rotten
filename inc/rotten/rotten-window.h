@@ -121,5 +121,31 @@ uint8_t rotten_window_remain_open(rotten_window* window);
  * @param window Pointer to the window to poll the events for.
  */
 void rotten_window_poll_events(rotten_window* window);
+
+/**
+ * @brief Fetches the corrosponding instance extension used to enable vulkan to create a VkSurface object for
+ * the current rotten window
+ * @param window Pointer to a rotten window which will eventually have the surface created.
+ * @returns C string which represents which Vulkan extension to enable
+ *
+ * @note This function needs to be called after the window is initialised, however it can be called before the
+ * window is actually shown as the only decision needed is for which backend has been selected
+ */
+const char* rotten_window_vk_surface_ext_name(rotten_window* window);
+
+/**
+ * @brief Attempts to create a vksurface object for a rotten window, requires a pointer to the vkinstance
+ * which has the correct surface extension enabled.
+ * @param window Pointer to the rotten window which will have
+ * @param instance Pointer to the VkInstance object which is the parent object of the surface to be created
+ * @param surface Pointer to the VkSurface object to be initialised
+ * @returns success code, I wish we could do double return types to get the VkResult too.
+ *
+ * @note Before you can create a surface, the underlying OS component which is passed to Vulkan needs to be
+ * initialised, that means the window needs to be open! There's all sorts of reasons as to why, such as
+ * getting the true size of the window etc.
+ */
+rotten_success_code rotten_window_vk_surface_create(rotten_window* window, const void* instance,
+                                                    void* surface);
 ROTTEN_CPP_GUARD_END
 #endif
