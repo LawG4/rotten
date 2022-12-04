@@ -22,8 +22,11 @@
 int rotten_window_startup(rotten_window_connection* con, rotten_window_definition* def,
                           rotten_window** window);
 
+VkResult vk_create_surface(VkInstance* instance, const char* const* extension_list, uint32_t extension_count);
+
 int main()
 {
+    // Start the rotten window without showing it to the screen
     rotten_window_connection window_conection;
     rotten_window_definition window_definition;
     rotten_window* window;
@@ -32,33 +35,16 @@ int main()
         return -1;
     }
 
-    // Now move onto the Vulkan instnce
-    // There are two instance extensnions we need to enable, which are the Vk_surface_khr which is the base
-    // surface extension, along with the platform specific instance extension
+    // Create the Vulkan instance with the required instacne extensions. We know we'll always need the khronos
+    // Vulkan extension and the platform specific extension which we can infer can get from rotten
+    VkInstance instance;
     const char* instance_extensions[] = {"VK_KHR_surface", rotten_window_vk_surface_ext_name(window)};
     uint32_t instance_extension_count = sizeof(instance_extensions) / sizeof(char*);
-
-    VkApplicationInfo app_info = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-                                  .apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0),
-                                  .engineVersion = 0,
-                                  .pApplicationName = "Rotten window example",
-                                  .pEngineName = "Rotten",
-                                  .pNext = NULL};
-
-    VkInstanceCreateInfo instance_info = {.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-                                          .pApplicationInfo = &app_info,
-                                          .ppEnabledExtensionNames = instance_extensions,
-                                          .enabledExtensionCount = instance_extension_count,
-                                          .ppEnabledLayerNames = NULL,
-                                          .enabledLayerCount = 0,
-                                          .flags = 0,
-                                          .pNext = NULL};
-    VkInstance instance;
-    if (vkCreateInstance(&instance_info, NULL, &instance) != VK_SUCCESS) {
+    if (vk_create_surface(&instance, instance_extensions, instance_extension_count) != VK_SUCCESS) {
         printf("Failed to create a vulkan instance\n");
         return -1;
     }
-    printf("Created the Vulkan instance!\n");
+    printf("Created the vulkan instance!\n");
 }
 
 int rotten_window_startup(rotten_window_connection* con, rotten_window_definition* def,
@@ -91,4 +77,28 @@ int rotten_window_startup(rotten_window_connection* con, rotten_window_definitio
 
     // All good
     return 0;
+}
+
+VkResult vk_create_surface(VkInstance* instance, const char* const* extension_list, uint32_t extension_count)
+{
+    // Now move onto the Vulkan instnce
+    // There are two instance extensnions we need to enable, which are the Vk_surface_khr which is the base
+    // surface extension, along with the platform specific instance extension
+    VkApplicationInfo app_info = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+                                  .apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0),
+                                  .engineVersion = 0,
+                                  .pApplicationName = "Rotten window example",
+                                  .pEngineName = "Rotten",
+                                  .pNext = NULL};
+
+    VkInstanceCreateInfo instance_info = {.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+                                          .pApplicationInfo = &app_info,
+                                          .ppEnabledExtensionNames = extension_list,
+                                          .enabledExtensionCount = extension_count,
+                                          .ppEnabledLayerNames = NULL,
+                                          .enabledLayerCount = 0,
+                                          .flags = 0,
+                                          .pNext = NULL};
+
+    return vkCreateInstance(&instance_info, NULL, instance);
 }
