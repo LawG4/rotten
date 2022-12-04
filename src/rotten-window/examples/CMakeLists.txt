@@ -12,9 +12,13 @@ endif()
 
 project(rotten-window-examples VERSION 0.1.0 LANGUAGES C)
 add_executable(rotten-window-01-hello 01-hello-window/hello-window.c)
+# TODO: allow turning off vulkan in CMake
+add_executable(rotten-window-02-vulkan-surface 02-vulkan-surface/vulkan-surface.c)
+target_link_libraries(rotten-window-02-vulkan-surface PRIVATE vulkan)
 
 set(examples 
-    rotten-window-01-hello)
+    rotten-window-01-hello
+	rotten-window-02-vulkan-surface)
 
 foreach(example ${examples})
 	target_link_libraries(${example} PRIVATE rotten-window)
