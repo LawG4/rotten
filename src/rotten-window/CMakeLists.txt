@@ -17,7 +17,8 @@ add_library(rotten-window
 	init/connect.c
 	init/window-init.c
 	init/show.c
-	events/poll.c)
+	events/poll.c
+	vulkan/vksurface.c) 
 
 # Add in rotten core
 add_subdirectory(../rotten-core core)
