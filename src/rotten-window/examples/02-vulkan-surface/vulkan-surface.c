@@ -23,7 +23,8 @@ int rotten_window_startup(rotten_window_connection* con, rotten_window_definitio
                           rotten_window** window);
 
 VkResult vk_create_surface(VkInstance* instance, const char* const* extension_list, uint32_t extension_count);
-
+VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurfaceKHR surface,
+                          VkDevice* device, VkQueue* queue);
 int main()
 {
     // Start the rotten window without showing it to the screen
@@ -45,6 +46,28 @@ int main()
         return -1;
     }
     printf("Created the vulkan instance!\n");
+
+    // Now in order to create the surface, the window has to be shown first and then use the rotten window api
+    // to actually create the surface
+    VkSurfaceKHR surface;
+    rotten_window_show(window);
+    if (rotten_window_vk_surface_create(window, &instance, &surface) != e_rotten_success) {
+        printf("Failed to create VkSurfaceKHR via rotten window\n");
+        return -1;
+    }
+
+    // Just select the first physical device and create a logical device with dynamic rendering enabled
+    VkPhysicalDevice physical;
+    uint32_t device_count = 1;
+    vkEnumeratePhysicalDevices(instance, &device_count, &physical);
+
+    VkDevice device;
+    VkQueue queueGraphicsPresent;
+    if (vk_create_device(instance, physical, surface, &device, &queueGraphicsPresent) != VK_SUCCESS) {
+        printf("Failed to create a vulkan device!\n");
+        return -1;
+    }
+    printf("Created the Vulkan device!\n");
 }
 
 int rotten_window_startup(rotten_window_connection* con, rotten_window_definition* def,
@@ -101,4 +124,62 @@ VkResult vk_create_surface(VkInstance* instance, const char* const* extension_li
                                           .pNext = NULL};
 
     return vkCreateInstance(&instance_info, NULL, instance);
+}
+
+VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurfaceKHR surface,
+                          VkDevice* device, VkQueue* queue)
+{
+    // Retrieve all of the queue families from the physical device
+    uint32_t queue_count;
+    vkGetPhysicalDeviceQueueFamilyProperties(physical, &queue_count, NULL);
+    VkQueueFamilyProperties* queues = malloc(queue_count * sizeof(VkQueueFamilyProperties));
+    if (queues == NULL) return -1;
+    vkGetPhysicalDeviceQueueFamilyProperties(physical, &queue_count, queues);
+
+    float priority = 1.0f;
+    VkDeviceQueueCreateInfo queue_info = {.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                                          .pQueuePriorities = &priority,
+                                          .queueCount = 1,
+                                          .flags = 0,
+                                          .pNext = NULL};
+
+    // Select the queue which has graphics and presentation support
+    for (uint32_t i = 0; i < queue_count; i++) {
+        VkBool32 present_support = VK_FALSE;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physical, i, surface, &present_support);
+
+        // Found good enough queue, break out loop
+        if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT && present_support == VK_TRUE) {
+            queue_info.queueFamilyIndex = i;
+            break;
+        }
+
+        // Gotten to the end without finding a good enough queue? error
+        if (i == queue_count - 1) {
+            printf("Failed to find a suitable queue\n");
+            return -1;
+        }
+    }
+
+    // List of device extensions
+    const char* extensions[] = {"VK_KHR_dynamic_rendering"};
+    uint32_t extension_count = sizeof(extensions) / sizeof(char*);
+
+    // Create the vulkan device with dynamic rendering enabled
+    VkDeviceCreateInfo device_info = {.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+                                      .ppEnabledExtensionNames = extensions,
+                                      .enabledExtensionCount = extension_count,
+                                      .pQueueCreateInfos = &queue_info,
+                                      .queueCreateInfoCount = 1,
+                                      .ppEnabledLayerNames = NULL,
+                                      .enabledLayerCount = 0,
+                                      .flags = 0,
+                                      .pNext = NULL};
+
+    VkResult res = vkCreateDevice(physical, &device_info, NULL, device);
+    if (res != VK_SUCCESS) return res;
+
+    vkGetDeviceQueue(*device, queue_info.queueFamilyIndex, 0, queue);
+    if (queue != VK_NULL_HANDLE) return VK_SUCCESS;
+    return -1;
 }
