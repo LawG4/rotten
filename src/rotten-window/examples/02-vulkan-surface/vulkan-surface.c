@@ -25,6 +25,7 @@ int rotten_window_startup(rotten_window_connection* con, rotten_window_definitio
 VkResult vk_create_surface(VkInstance* instance, const char* const* extension_list, uint32_t extension_count);
 VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurfaceKHR surface,
                           VkDevice* device, VkQueue* queue);
+
 int main()
 {
     // Start the rotten window without showing it to the screen
@@ -182,4 +183,104 @@ VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurf
     vkGetDeviceQueue(*device, queue_info.queueFamilyIndex, 0, queue);
     if (queue != VK_NULL_HANDLE) return VK_SUCCESS;
     return -1;
+}
+
+VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkQueue queue, VkSemaphore image_renderable,
+                    VkSemaphore image_presentable, VkFence fence, VkCommandBuffer* cmds)
+{
+    // Perform a wait on the CPU via a fence. This action performs a syncronisation between the cpu and gpu
+    // and is very slow. The aim is to make sure that it is now safe for the CPU to start recording commands
+    // into the command buffer, and that can only be the case when the GPU is finished with it. Once we have
+    // waited on this fence we can reset it
+    vkWaitForFences(device, 1, &fence, VK_TRUE, (uint64_t)-1);
+    vkResetFences(device, 1, &fence);
+
+    // Fetch which image in the swapchain we're about to use. This can then be used to index all other
+    // resources tied to the swapchain like the command buffer and image view indexes. This doesn't perform
+    // any waiting but it will tell the command buffer to singal the semaphore we pass when the image is
+    // acquired from the swapchain
+    uint32_t swap_index;
+    vkAcquireNextImageKHR(device, swap, (uint64_t)-1, image_renderable, VK_NULL_HANDLE, &swap_index);
+
+    // Use this to get the current command buffer to use and reset it
+    VkCommandBuffer cmd = cmds[swap_index];
+    vkResetCommandBuffer(cmd, 0);
+    VkCommandBufferBeginInfo begin_info = {.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                                           .pInheritanceInfo = NULL,
+                                           .flags = 0,
+                                           .pNext = NULL};
+    vkBeginCommandBuffer(cmd, &begin_info);
+
+    // Now rather than beginning a render pass we can use the dynamic rendering device extension to package
+    // all of that for us. The aim of this is to start a "render pass" so that the framebuffer is cleared and
+    // that's litterally it
+    VkClearValue clear = {0.0f, 0.0f, 0.0f, 1.0f};
+    VkRenderingAttachmentInfoKHR attachment_info = {.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+                                                    .clearValue = clear,
+                                                    .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+                                                    .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+                                                    .imageLayout = 0,         //??
+                                                    .resolveImageLayout = 0,  //?
+                                                    .imageView = 0,           // >
+                                                    .resolveImageView = 0,    //?
+                                                    .pNext = NULL};
+    VkRenderingInfoKHR rendering_info = {
+      .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+      .pColorAttachments = &attachment_info,
+      .colorAttachmentCount = 1,
+      .renderArea = {.extent = {.width = 20, .height = 20}, .offset = {.x = 0, .y = 0}},
+      .pDepthAttachment = NULL,
+      .pStencilAttachment = NULL,
+      .layerCount = 1,  // ?
+      .flags = 0,
+      .pNext = NULL};
+
+    vkCmdBeginRendering(cmd, &rendering_info);
+    vkCmdEndRendering(cmd);
+
+    if (vkEndCommandBuffer(cmd) != VK_SUCCESS) {
+        printf("Failed while attempting to end the command buffer\n");
+        return -1;
+    }
+
+    // Now submit this command buffer, ensuring that we set the gpu to signal the image present ready
+    // semaphore when the command buffer is finished, this is because all the rendering commands are done and
+    // the image is ready to be shown on screen. However, we also want to prevent the writing to the render
+    // target until the image is ready to be rendered to. This semaphore is the one signalled by the aquire
+    // next image
+    uint32_t wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    VkSubmitInfo submit_info = {.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+                                .pCommandBuffers = &cmd,
+                                .commandBufferCount = 1,
+                                .pSignalSemaphores = &image_presentable,
+                                .signalSemaphoreCount = 1,
+                                .pWaitSemaphores = &image_renderable,
+                                .waitSemaphoreCount = 1,
+                                .pWaitDstStageMask = &wait_stage,
+                                .pNext = NULL};
+
+    // Tell the GPU which fence to signal when it is done reading the command buffer, and the CPU can safely
+    // write to the command buffer
+    if (vkQueueSubmit(queue, 1, &submit_info, fence) != VK_SUCCESS) {
+        printf("Failed to submit the command buffer to the graphics queue\n");
+        return -1;
+    }
+
+    // Now that we have commands submitted to the graphics queue and it is churning away at that work, let's
+    // queue up the image to be presented to the screen once the image is ready. Once again this doesn't
+    // perform any waits on the CPU, but tells the presentation queue to wait until the semaphore is signalled
+    // (The one which is signalled by the graphics queue finishing the command buffer)
+    VkPresentInfoKHR present_info = {.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+                                     .pSwapchains = &swap,
+                                     .swapchainCount = 1,
+                                     .pWaitSemaphores = &image_presentable,
+                                     .waitSemaphoreCount = 1,
+                                     .pImageIndices = &swap_index,
+                                     .pResults = NULL,
+                                     .pNext = NULL};
+    if (vkQueuePresentKHR(queue, &present_info) != VK_SUCCESS) {
+        printf("Failed to present the image\n");
+    }
+
+    return VK_SUCCESS;
 }
