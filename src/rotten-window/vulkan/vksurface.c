@@ -121,7 +121,7 @@ rotten_success_code rotten_window_vk_surface_create(rotten_window* window, const
         return vk_surface_create_xcb((rotten_window_xcb*)window, instance, surface);
 #endif  // xcb
 #ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
-    if (base->backend == e_rotten_window_xcb) return e_rotten_unimplemented;
+    if (base->backend == e_rotten_window_wayland) return e_rotten_unimplemented;
 #endif  // wayland
 #endif  // linux
 
