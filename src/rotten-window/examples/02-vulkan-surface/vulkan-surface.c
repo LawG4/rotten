@@ -32,6 +32,9 @@ VkResult vk_create_sync_objects(VkDevice device, uint32_t swap_length, VkSemapho
                                 VkSemaphore** image_presentable, VkFence** fences);
 VkResult vk_create_command_buffers(VkDevice, uint32_t swap_length, VkCommandPool* pool,
                                    VkCommandBuffer** cmd);
+VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkImage* swap_images, VkQueue queue,
+                    VkSemaphore image_renderable, VkSemaphore image_presentable, VkFence fence,
+                    VkCommandBuffer* cmds);
 
 int main()
 {
@@ -110,6 +113,20 @@ int main()
         return -1;
     }
     printf("Created the Vulkan command buffers!\n");
+
+    // Now enter into the windowing loop
+    uint32_t sync_object_index = 0;
+    while (rotten_window_remain_open(window)) {
+        rotten_window_poll_events(window);
+
+        // Record the command buffer for the current frame and submit it
+        vk_do_work(device, swap, swap_images, queueGraphicsPresent, image_renderables[sync_object_index],
+                   image_presentables[sync_object_index], fences[sync_object_index], cmds);
+
+        // Advance to the next set of sync objects
+        sync_object_index = (sync_object_index + 1) % swap_length;
+        // printf("On sync index %d\n", sync_object_index);
+    }
 }
 
 int rotten_window_startup(rotten_window_connection* con, rotten_window_definition* def,
@@ -363,14 +380,15 @@ VkResult vk_create_command_buffers(VkDevice device, uint32_t swap_length, VkComm
     return vkAllocateCommandBuffers(device, &alloc_info, *cmd);
 }
 
-VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkQueue queue, VkSemaphore image_renderable,
-                    VkSemaphore image_presentable, VkFence fence, VkCommandBuffer* cmds)
+VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkImage* swap_images, VkQueue queue,
+                    VkSemaphore image_renderable, VkSemaphore image_presentable, VkFence fence,
+                    VkCommandBuffer* cmds)
 {
     // Perform a wait on the CPU via a fence. This action performs a syncronisation between the cpu and gpu
     // and is very slow. The aim is to make sure that it is now safe for the CPU to start recording commands
     // into the command buffer, and that can only be the case when the GPU is finished with it. Once we have
     // waited on this fence we can reset it
-    vkWaitForFences(device, 1, &fence, VK_TRUE, (uint64_t)-1);
+    if (vkWaitForFences(device, 1, &fence, VK_TRUE, (uint64_t)-1) != VK_SUCCESS) printf("Failed to wait\n");
     vkResetFences(device, 1, &fence);
 
     // Fetch which image in the swapchain we're about to use. This can then be used to index all other
@@ -378,21 +396,43 @@ VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkQueue queue, VkSemap
     // any waiting but it will tell the command buffer to singal the semaphore we pass when the image is
     // acquired from the swapchain
     uint32_t swap_index;
-    vkAcquireNextImageKHR(device, swap, (uint64_t)-1, image_renderable, VK_NULL_HANDLE, &swap_index);
+    if (vkAcquireNextImageKHR(device, swap, (uint64_t)-1, image_renderable, VK_NULL_HANDLE, &swap_index) !=
+        VK_SUCCESS)
+        printf("Failed to acquire next image");
 
     // Use this to get the current command buffer to use and reset it
     VkCommandBuffer cmd = cmds[swap_index];
-    vkResetCommandBuffer(cmd, 0);
+    if (vkResetCommandBuffer(cmd, 0) != VK_SUCCESS) printf("Failed to reset\n");
     VkCommandBufferBeginInfo begin_info = {.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
                                            .pInheritanceInfo = NULL,
                                            .flags = 0,
                                            .pNext = NULL};
-    vkBeginCommandBuffer(cmd, &begin_info);
+    if (vkBeginCommandBuffer(cmd, &begin_info) != VK_SUCCESS) printf("Failed to begin cmd\n");
+
+    // Transition the image from surface usage to colour output
+    VkImageMemoryBarrier renderable_barrier = {.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                                               .image = swap_images[swap_index],
+                                               .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                               .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                                               .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                               .subresourceRange =
+                                                 {
+                                                   .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                   .baseMipLevel = 0,
+                                                   .levelCount = 1,
+                                                   .baseArrayLayer = 0,
+                                                   .layerCount = 1,
+                                                 },
+                                               .pNext = NULL};
+
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, NULL, 0, NULL, 1,
+                         &renderable_barrier);
 
     // Now rather than beginning a render pass we can use the dynamic rendering device extension to package
     // all of that for us. The aim of this is to start a "render pass" so that the framebuffer is cleared and
     // that's litterally it
-    VkClearValue clear = {0.0f, 0.0f, 0.0f, 1.0f};
+    VkClearValue clear = {1.0f, 0.0f, 0.0f, 1.0f};
     VkRenderingAttachmentInfoKHR attachment_info = {.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
                                                     .clearValue = clear,
                                                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -415,6 +455,17 @@ VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkQueue queue, VkSemap
 
     vkCmdBeginRendering(cmd, &rendering_info);
     vkCmdEndRendering(cmd);
+
+    // Transition the render target back to presentable format using the
+    VkImageMemoryBarrier presentable_barrier = {.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+                                                .image = swap_images[swap_index],
+                                                .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                                                .subresourceRange = renderable_barrier.subresourceRange,
+                                                .pNext = NULL};
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, NULL, 0, NULL, 1, &presentable_barrier);
 
     if (vkEndCommandBuffer(cmd) != VK_SUCCESS) {
         printf("Failed while attempting to end the command buffer\n");
