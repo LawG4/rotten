@@ -28,6 +28,8 @@ VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurf
 VkResult vk_create_swapchain(VkDevice device, VkPhysicalDevice physical, VkSurfaceKHR surface,
                              VkSwapchainKHR* swap, uint32_t* swap_length, VkExtent2D* extent,
                              VkImage** images, VkImageView** views);
+VkResult vk_create_sync_objects(VkDevice device, uint32_t swap_length, VkSemaphore** image_renderable,
+                                VkSemaphore** image_presentable, VkFence** fences);
 
 int main()
 {
@@ -86,6 +88,17 @@ int main()
         return -1;
     }
     printf("Created the Vulkan swapchain!\n");
+
+    // Create the sync objects
+    VkSemaphore* image_renderables;
+    VkSemaphore* image_presentables;
+    VkFence* fences;
+    if (vk_create_sync_objects(device, swap_length, &image_renderables, &image_presentables, &fences) !=
+        VK_SUCCESS) {
+        printf("Failed to create the sync objects\n");
+        return -1;
+    }
+    printf("Created Vulkan sync objects!\n");
 }
 
 int rotten_window_startup(rotten_window_connection* con, rotten_window_definition* def,
@@ -282,6 +295,34 @@ VkResult vk_create_swapchain(VkDevice device, VkPhysicalDevice physical, VkSurfa
             printf("Failed to create image view\n");
             return -1;
         }
+    }
+
+    return VK_SUCCESS;
+}
+
+VkResult vk_create_sync_objects(VkDevice device, uint32_t swap_length, VkSemaphore** image_renderable,
+                                VkSemaphore** image_presentable, VkFence** fences)
+{
+    // Create the create infos for the semaphore
+    VkSemaphoreCreateInfo semaphore_info = {
+      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, .flags = 0, .pNext = NULL};
+    VkFenceCreateInfo fence_info = {
+      .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .flags = VK_FENCE_CREATE_SIGNALED_BIT, .pNext = NULL};
+
+    // Allocate memory for each frame in the swapchain
+    *image_renderable = malloc(swap_length * sizeof(VkSemaphore));
+    if (*image_renderable == NULL) return -1;
+    *image_presentable = malloc(swap_length * sizeof(VkSemaphore));
+    if (*image_presentable == NULL) return -1;
+    *fences = malloc(swap_length * sizeof(VkFence));
+    if (*fences == NULL) return -1;
+
+    for (uint32_t i = 0; i < swap_length; i++) {
+        if (vkCreateSemaphore(device, &semaphore_info, NULL, &(*image_renderable)[i]) != VK_SUCCESS)
+            return -1;
+        if (vkCreateSemaphore(device, &semaphore_info, NULL, &(*image_presentable)[i]) != VK_SUCCESS)
+            return -1;
+        if (vkCreateFence(device, &fence_info, NULL, &(*fences)[i]) != VK_SUCCESS) return -1;
     }
 
     return VK_SUCCESS;
