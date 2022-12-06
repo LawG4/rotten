@@ -30,6 +30,8 @@ VkResult vk_create_swapchain(VkDevice device, VkPhysicalDevice physical, VkSurfa
                              VkImage** images, VkImageView** views);
 VkResult vk_create_sync_objects(VkDevice device, uint32_t swap_length, VkSemaphore** image_renderable,
                                 VkSemaphore** image_presentable, VkFence** fences);
+VkResult vk_create_command_buffers(VkDevice, uint32_t swap_length, VkCommandPool* pool,
+                                   VkCommandBuffer** cmd);
 
 int main()
 {
@@ -98,7 +100,16 @@ int main()
         printf("Failed to create the sync objects\n");
         return -1;
     }
-    printf("Created Vulkan sync objects!\n");
+    printf("Created the Vulkan sync objects!\n");
+
+    // Create all the command buffers and the pool
+    VkCommandPool pool;
+    VkCommandBuffer* cmds;
+    if (vk_create_command_buffers(device, swap_length, &pool, &cmds) != VK_SUCCESS) {
+        printf("Failed to create command buffers\n");
+        return -1;
+    }
+    printf("Created the Vulkan command buffers!\n");
 }
 
 int rotten_window_startup(rotten_window_connection* con, rotten_window_definition* def,
@@ -326,6 +337,30 @@ VkResult vk_create_sync_objects(VkDevice device, uint32_t swap_length, VkSemapho
     }
 
     return VK_SUCCESS;
+}
+
+VkResult vk_create_command_buffers(VkDevice device, uint32_t swap_length, VkCommandPool* pool,
+                                   VkCommandBuffer** cmd)
+{
+    VkCommandPoolCreateInfo pool_info = {.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+                                         .queueFamilyIndex = 0,  // TODO pass on actual queue index
+                                         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+                                         .pNext = NULL};
+
+    if (vkCreateCommandPool(device, &pool_info, NULL, pool) != VK_SUCCESS) {
+        printf("Failed to create command pool\n");
+        return -1;
+    }
+
+    // Allocate the command buffers from the pool
+    VkCommandBufferAllocateInfo alloc_info = {.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+                                              .commandPool = *pool,
+                                              .commandBufferCount = swap_length,
+                                              .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                                              .pNext = NULL};
+    *cmd = malloc(swap_length * sizeof(VkCommandBuffer));
+    if (*cmd == NULL) return -1;
+    return vkAllocateCommandBuffers(device, &alloc_info, *cmd);
 }
 
 VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkQueue queue, VkSemaphore image_renderable,
