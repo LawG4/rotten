@@ -25,6 +25,9 @@ int rotten_window_startup(rotten_window_connection* con, rotten_window_definitio
 VkResult vk_create_surface(VkInstance* instance, const char* const* extension_list, uint32_t extension_count);
 VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurfaceKHR surface,
                           VkDevice* device, VkQueue* queue);
+VkResult vk_create_swapchain(VkDevice device, VkPhysicalDevice physical, VkSurfaceKHR surface,
+                             VkSwapchainKHR* swap, uint32_t* swap_length, VkExtent2D* extent,
+                             VkImage** images, VkImageView** views);
 
 int main()
 {
@@ -69,6 +72,20 @@ int main()
         return -1;
     }
     printf("Created the Vulkan device!\n");
+
+    // Now fetch the swapchain and the associated image views
+    VkSwapchainKHR swap;
+    VkImage* swap_images;
+    VkImageView* swap_views;
+    uint32_t swap_length;
+    VkExtent2D swap_extent;
+
+    if (vk_create_swapchain(device, physical, surface, &swap, &swap_length, &swap_extent, &swap_images,
+                            &swap_views) != VK_SUCCESS) {
+        printf("Failed to create the swapchain\n");
+        return -1;
+    }
+    printf("Created the Vulkan swapchain!\n");
 }
 
 int rotten_window_startup(rotten_window_connection* con, rotten_window_definition* def,
@@ -163,7 +180,7 @@ VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurf
     }
 
     // List of device extensions
-    const char* extensions[] = {"VK_KHR_dynamic_rendering"};
+    const char* extensions[] = {"VK_KHR_swapchain", "VK_KHR_dynamic_rendering"};
     uint32_t extension_count = sizeof(extensions) / sizeof(char*);
 
     // Create the vulkan device with dynamic rendering enabled
@@ -183,6 +200,91 @@ VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurf
     vkGetDeviceQueue(*device, queue_info.queueFamilyIndex, 0, queue);
     if (queue != VK_NULL_HANDLE) return VK_SUCCESS;
     return -1;
+}
+
+VkResult vk_create_swapchain(VkDevice device, VkPhysicalDevice physical, VkSurfaceKHR surface,
+                             VkSwapchainKHR* swap, uint32_t* swap_length, VkExtent2D* extent,
+                             VkImage** images, VkImageView** views)
+{
+    // For the swapchain just take the first format availble (Note this always assumes there is a format) And
+    // for the presentation mode FIFO is always availble
+    uint32_t format_count = 1;
+    VkSurfaceFormatKHR format;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical, surface, &format_count, &format);
+
+    // Don't bother asking the windowing system for the swapchain size, instead remember that most of the time
+    // the capabilities will upperbound on the actual size of the surface anyway. Aim for 3 images in the
+    // swapchain, but once again upperbound by the surface capabilities
+    VkSurfaceCapabilitiesKHR cap;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical, surface, &cap);
+    *extent = cap.maxImageExtent;
+    // TODO: On my devce these look the wrong way round cap.min = 3 cap.max = 0????
+    *swap_length = cap.minImageCount <= 3 ? cap.minImageCount : 3;
+
+    // TODO pass the actual queue family index
+    uint32_t queue_family = 0;
+
+    VkSwapchainCreateInfoKHR swap_info = {.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+                                          .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                          .surface = surface,
+                                          .minImageCount = *swap_length,
+                                          .imageFormat = format.format,
+                                          .imageColorSpace = format.colorSpace,
+                                          .presentMode = VK_PRESENT_MODE_FIFO_KHR,
+                                          .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+                                          .pQueueFamilyIndices = &queue_family,
+                                          .queueFamilyIndexCount = 1,
+                                          .imageExtent = *extent,
+                                          .oldSwapchain = VK_NULL_HANDLE,
+                                          .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+                                          .preTransform = cap.currentTransform,
+                                          .imageArrayLayers = 1,
+                                          .clipped = VK_TRUE,
+                                          .flags = 0,
+                                          .pNext = NULL};
+
+    if (vkCreateSwapchainKHR(device, &swap_info, NULL, swap) != VK_SUCCESS) {
+        printf("Unable to create a swapchain\n");
+        return -1;
+    }
+
+    // Retrieve the swapchain image handles while getting the actual number of swap images
+    vkGetSwapchainImagesKHR(device, *swap, swap_length, NULL);
+    *images = malloc(*swap_length * sizeof(VkImage));
+    if (*images == NULL) return -1;
+    if (vkGetSwapchainImagesKHR(device, *swap, swap_length, *images) != VK_SUCCESS) {
+        printf("Failed while retriving swapchain images\n");
+        return -1;
+    }
+
+    // Reserve enough space for the image views and initialise the views from the image
+    *views = malloc(*swap_length * sizeof(VkImageView));
+    if (*views == NULL) return -1;
+
+    for (uint32_t i = 0; i < *swap_length; i++) {
+        VkImageViewCreateInfo view_info = {.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                                           .image = (*images)[i],
+                                           .format = format.format,
+                                           .viewType = VK_IMAGE_VIEW_TYPE_2D,
+                                           .subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                           .subresourceRange.baseMipLevel = 0,
+                                           .subresourceRange.levelCount = 1,
+                                           .subresourceRange.baseArrayLayer = 0,
+                                           .subresourceRange.layerCount = 1,
+                                           .components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                                           .components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                                           .components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                                           .components.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+                                           .flags = 0,
+                                           .pNext = NULL};
+
+        if (vkCreateImageView(device, &view_info, NULL, &(*views)[i]) != VK_SUCCESS) {
+            printf("Failed to create image view\n");
+            return -1;
+        }
+    }
+
+    return VK_SUCCESS;
 }
 
 VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkQueue queue, VkSemaphore image_renderable,
