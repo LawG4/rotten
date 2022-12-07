@@ -24,8 +24,8 @@ int rotten_window_startup(rotten_window_connection* con, rotten_window_definitio
 
 VkResult vk_create_instance(VkInstance* instance, VkDebugUtilsMessengerEXT* msg,
                             const char* const* extension_list, uint32_t extension_count);
-VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurfaceKHR surface,
-                          VkDevice* device, VkQueue* queue);
+VkResult vk_create_device(VkInstance instance, VkSurfaceKHR surface, VkPhysicalDevice* physical,
+                          VkDevice* device, VkQueue* queue, uint32_t* queue_index);
 VkResult vk_create_swapchain(VkDevice device, VkPhysicalDevice physical, VkSurfaceKHR surface,
                              VkSwapchainKHR* swap, uint32_t* swap_length, VkExtent2D* extent,
                              VkImage** images, VkImageView** views);
@@ -70,14 +70,12 @@ int main()
         return -1;
     }
 
-    // Just select the first physical device and create a logical device with dynamic rendering enabled
-    VkPhysicalDevice physical;
-    uint32_t device_count = 1;
-    vkEnumeratePhysicalDevices(instance, &device_count, &physical);
-
+    // Select the first physical device assuming that it is capable of dynamic rendering
     VkDevice device;
-    VkQueue queueGraphicsPresent;
-    if (vk_create_device(instance, physical, surface, &device, &queueGraphicsPresent) != VK_SUCCESS) {
+    VkPhysicalDevice physical;
+    VkQueue queue_gp;  // graphics & present queues
+    uint32_t queue_index_gp;
+    if (vk_create_device(instance, surface, &physical, &device, &queue_gp, &queue_index_gp) != VK_SUCCESS) {
         printf("Failed to create a vulkan device!\n");
         return -1;
     }
@@ -123,7 +121,7 @@ int main()
         rotten_window_poll_events(window);
 
         // Record the command buffer for the current frame and submit it
-        vk_do_work(device, swap, swap_images, queueGraphicsPresent, image_renderables[sync_object_index],
+        vk_do_work(device, swap, swap_images, queue_gp, image_renderables[sync_object_index],
                    image_presentables[sync_object_index], fences[sync_object_index], cmds);
 
         // Advance to the next set of sync objects
@@ -238,15 +236,21 @@ VkResult vk_create_instance(VkInstance* instance, VkDebugUtilsMessengerEXT* msg,
 #endif
 }
 
-VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurfaceKHR surface,
-                          VkDevice* device, VkQueue* queue)
+VkResult vk_create_device(VkInstance instance, VkSurfaceKHR surface, VkPhysicalDevice* physical,
+                          VkDevice* device, VkQueue* queue, uint32_t* queue_index)
 {
+    // The way you're supposed to do this is to querey how many devices their are first and allocate how many,
+    // however if the pPhysicalDevice handle is not null, then loader will just fetch the that many devices,
+    // so we can fetch 1 physical device, this requires the assumption that the user definitley has one
+    uint32_t device_count = 1;
+    vkEnumeratePhysicalDevices(instance, &device_count, physical);
+
     // Retrieve all of the queue families from the physical device
     uint32_t queue_count;
-    vkGetPhysicalDeviceQueueFamilyProperties(physical, &queue_count, NULL);
+    vkGetPhysicalDeviceQueueFamilyProperties(*physical, &queue_count, NULL);
     VkQueueFamilyProperties* queues = malloc(queue_count * sizeof(VkQueueFamilyProperties));
     if (queues == NULL) return -1;
-    vkGetPhysicalDeviceQueueFamilyProperties(physical, &queue_count, queues);
+    vkGetPhysicalDeviceQueueFamilyProperties(*physical, &queue_count, queues);
 
     float priority = 1.0f;
     VkDeviceQueueCreateInfo queue_info = {.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
@@ -258,7 +262,7 @@ VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurf
     // Select the queue which has graphics and presentation support
     for (uint32_t i = 0; i < queue_count; i++) {
         VkBool32 present_support = VK_FALSE;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physical, i, surface, &present_support);
+        vkGetPhysicalDeviceSurfaceSupportKHR(*physical, i, surface, &present_support);
 
         // Found good enough queue, break out loop
         if (queues[i].queueFlags & VK_QUEUE_GRAPHICS_BIT && present_support == VK_TRUE) {
@@ -295,9 +299,10 @@ VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurf
     };
     device_info.pNext = &dynamic_rendering_feature;
 
-    VkResult res = vkCreateDevice(physical, &device_info, NULL, device);
+    VkResult res = vkCreateDevice(*physical, &device_info, NULL, device);
     if (res != VK_SUCCESS) return res;
 
+    *queue_index = queue_info.queueFamilyIndex;
     vkGetDeviceQueue(*device, queue_info.queueFamilyIndex, 0, queue);
     if (queue != VK_NULL_HANDLE) return VK_SUCCESS;
     return -1;
