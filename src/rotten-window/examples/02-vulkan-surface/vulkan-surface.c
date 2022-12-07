@@ -288,6 +288,13 @@ VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurf
                                       .flags = 0,
                                       .pNext = NULL};
 
+    // Enable dynamic rendering
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+      .dynamicRendering = VK_TRUE,
+    };
+    device_info.pNext = &dynamic_rendering_feature;
+
     VkResult res = vkCreateDevice(physical, &device_info, NULL, device);
     if (res != VK_SUCCESS) return res;
 
