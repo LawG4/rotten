@@ -22,7 +22,8 @@
 int rotten_window_startup(rotten_window_connection* con, rotten_window_definition* def,
                           rotten_window** window);
 
-VkResult vk_create_surface(VkInstance* instance, const char* const* extension_list, uint32_t extension_count);
+VkResult vk_create_instance(VkInstance* instance, VkDebugUtilsMessengerEXT* msg,
+                            const char* const* extension_list, uint32_t extension_count);
 VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurfaceKHR surface,
                           VkDevice* device, VkQueue* queue);
 VkResult vk_create_swapchain(VkDevice device, VkPhysicalDevice physical, VkSurfaceKHR surface,
@@ -50,9 +51,11 @@ int main()
     // Create the Vulkan instance with the required instacne extensions. We know we'll always need the khronos
     // Vulkan extension and the platform specific extension which we can infer can get from rotten
     VkInstance instance;
+    VkDebugUtilsMessengerEXT messenger;
     const char* instance_extensions[] = {"VK_KHR_surface", rotten_window_vk_surface_ext_name(window)};
     uint32_t instance_extension_count = sizeof(instance_extensions) / sizeof(char*);
-    if (vk_create_surface(&instance, instance_extensions, instance_extension_count) != VK_SUCCESS) {
+    if (vk_create_instance(&instance, &messenger, instance_extensions, instance_extension_count) !=
+        VK_SUCCESS) {
         printf("Failed to create a vulkan instance\n");
         return -1;
     }
@@ -161,7 +164,16 @@ int rotten_window_startup(rotten_window_connection* con, rotten_window_definitio
     return 0;
 }
 
-VkResult vk_create_surface(VkInstance* instance, const char* const* extension_list, uint32_t extension_count)
+static VkBool32 s_debug_messenger(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                  VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+                                  const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+{
+    printf("VALIDATION ERROR!!!\n\n%s\n\n", pCallbackData->pMessage);
+    return VK_FALSE;  // Don't do anything after this function ends
+}
+
+VkResult vk_create_instance(VkInstance* instance, VkDebugUtilsMessengerEXT* msg,
+                            const char* const* extension_list, uint32_t extension_count)
 {
     // Now move onto the Vulkan instnce
     // There are two instance extensnions we need to enable, which are the Vk_surface_khr which is the base
@@ -182,7 +194,48 @@ VkResult vk_create_surface(VkInstance* instance, const char* const* extension_li
                                           .flags = 0,
                                           .pNext = NULL};
 
-    return vkCreateInstance(&instance_info, NULL, instance);
+#ifndef NDEBUG
+    // If we're in debug mode then enable validation layers and attach the debug messenger
+    const char** debug_extension_list = malloc((extension_count + 1) * sizeof(char*));
+    if (debug_extension_list == NULL) return -1;
+    memcpy(debug_extension_list, extension_list, extension_count * sizeof(char*));
+    debug_extension_list[extension_count] = "VK_EXT_debug_utils";
+    instance_info.enabledExtensionCount = extension_count + 1;
+    instance_info.ppEnabledExtensionNames = debug_extension_list;
+
+    const char* debug_layer_list[] = {"VK_LAYER_KHRONOS_validation"};
+    instance_info.enabledLayerCount = 1;
+    instance_info.ppEnabledLayerNames = debug_layer_list;
+#endif
+
+    if (vkCreateInstance(&instance_info, NULL, instance) != VK_SUCCESS) {
+        printf("Vulkan instance creation failed\n");
+        return -1;
+    }
+
+#ifndef NDEBUG
+    // Now if we're debugging we need to actually create the debug messenger and also free the memory we
+    // allocated for the extension list
+    free(debug_extension_list);
+
+    PFN_vkCreateDebugUtilsMessengerEXT create_messenger =
+      (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(*instance, "vkCreateDebugUtilsMessengerEXT");
+    if (create_messenger == NULL) return -1;
+
+    VkDebugUtilsMessengerCreateInfoEXT messenger_info = {
+      .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+      .pfnUserCallback = s_debug_messenger,
+      .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+      .messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT,
+      .pUserData = NULL,
+      .flags = 0,
+      .pNext = NULL};
+
+    return create_messenger(*instance, &messenger_info, NULL, msg);
+#else
+    *msg = VK_NULL_HANDLE;
+    return VK_SUCCESS;
+#endif
 }
 
 VkResult vk_create_device(VkInstance instance, VkPhysicalDevice physical, VkSurfaceKHR surface,
