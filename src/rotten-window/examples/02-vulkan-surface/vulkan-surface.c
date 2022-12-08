@@ -33,9 +33,9 @@ VkResult vk_create_sync_objects(VkDevice device, uint32_t swap_length, VkSemapho
                                 VkSemaphore** image_presentable, VkFence** fences);
 VkResult vk_create_command_buffers(VkDevice, uint32_t swap_length, VkCommandPool* pool,
                                    VkCommandBuffer** cmd);
-VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkImage* swap_images, VkQueue queue,
-                    VkSemaphore image_renderable, VkSemaphore image_presentable, VkFence fence,
-                    VkCommandBuffer* cmds);
+VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkImage* swap_images, VkImageView* swap_view,
+                    VkExtent2D render_area, VkQueue queue, VkSemaphore image_renderable,
+                    VkSemaphore image_presentable, VkFence fence, VkCommandBuffer* cmds);
 
 int main()
 {
@@ -121,8 +121,9 @@ int main()
         rotten_window_poll_events(window);
 
         // Record the command buffer for the current frame and submit it
-        vk_do_work(device, swap, swap_images, queue_gp, image_renderables[sync_object_index],
-                   image_presentables[sync_object_index], fences[sync_object_index], cmds);
+        vk_do_work(device, swap, swap_images, swap_views, swap_extent, queue_gp,
+                   image_renderables[sync_object_index], image_presentables[sync_object_index],
+                   fences[sync_object_index], cmds);
 
         // Advance to the next set of sync objects
         sync_object_index = (sync_object_index + 1) % swap_length;
@@ -445,9 +446,9 @@ VkResult vk_create_command_buffers(VkDevice device, uint32_t swap_length, VkComm
     return vkAllocateCommandBuffers(device, &alloc_info, *cmd);
 }
 
-VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkImage* swap_images, VkQueue queue,
-                    VkSemaphore image_renderable, VkSemaphore image_presentable, VkFence fence,
-                    VkCommandBuffer* cmds)
+VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkImage* swap_images, VkImageView* swap_view,
+                    VkExtent2D render_area, VkQueue queue, VkSemaphore image_renderable,
+                    VkSemaphore image_presentable, VkFence fence, VkCommandBuffer* cmds)
 {
     // Perform a wait on the CPU via a fence. This action performs a syncronisation between the cpu and gpu
     // and is very slow. The aim is to make sure that it is now safe for the CPU to start recording commands
@@ -502,21 +503,20 @@ VkResult vk_do_work(VkDevice device, VkSwapchainKHR swap, VkImage* swap_images, 
                                                     .clearValue = clear,
                                                     .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
                                                     .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                                                    .imageLayout = 0,         //??
+                                                    .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
                                                     .resolveImageLayout = 0,  //?
-                                                    .imageView = 0,           // >
-                                                    .resolveImageView = 0,    //?
+                                                    .imageView = swap_view[swap_index],
+                                                    .resolveImageView = 0,  //?
                                                     .pNext = NULL};
-    VkRenderingInfoKHR rendering_info = {
-      .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-      .pColorAttachments = &attachment_info,
-      .colorAttachmentCount = 1,
-      .renderArea = {.extent = {.width = 20, .height = 20}, .offset = {.x = 0, .y = 0}},
-      .pDepthAttachment = NULL,
-      .pStencilAttachment = NULL,
-      .layerCount = 1,  // ?
-      .flags = 0,
-      .pNext = NULL};
+    VkRenderingInfoKHR rendering_info = {.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+                                         .pColorAttachments = &attachment_info,
+                                         .colorAttachmentCount = 1,
+                                         .renderArea = {.extent = render_area, .offset = {.x = 0, .y = 0}},
+                                         .pDepthAttachment = NULL,
+                                         .pStencilAttachment = NULL,
+                                         .layerCount = 1,  // ?
+                                         .flags = 0,
+                                         .pNext = NULL};
 
     vkCmdBeginRendering(cmd, &rendering_info);
     vkCmdEndRendering(cmd);
