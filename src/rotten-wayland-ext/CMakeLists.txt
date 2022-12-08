@@ -33,16 +33,17 @@ if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/generated/xdg-shell-protocol.c)
 	# Now ensure the generated directory exists 
 	file(MAKE_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/generated")
 
+	#
 	# Now use wayland scanner to generate the source files
+	#
+
+	# Xdg-shell
 	execute_process(COMMAND ${WL_SCANNER} 
 		"private-code"
 		"/usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml"
 		"xdg-shell-protocol.c"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/generated"
 		RESULT_VARIABLE WL_RESULT)
-	if(NOT ${WL_RESULT} EQUAL 0)
-		message(FATAL_ERROR "Failed to generated source")
-	endif()
 
 	execute_process(COMMAND ${WL_SCANNER} 
 		"client-header"
@@ -50,8 +51,28 @@ if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/generated/xdg-shell-protocol.c)
 		"xdg-shell-client-protocol.h"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/generated"
 		RESULT_VARIABLE WL_RESULT)	
+
 	if(NOT ${WL_RESULT} EQUAL 0)
-		message(FATAL_ERROR "Failed to generated header")
+		message(FATAL_ERROR "Failed to generated wayland source for xdg shell")
+	endif()
+
+	# Xdg window decoration
+	execute_process(COMMAND ${WL_SCANNER} 
+	"private-code"
+	"/usr/share/wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml"
+	"xdg-decoration-protocol.c"
+	WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/generated"
+	RESULT_VARIABLE WL_RESULT)
+
+	execute_process(COMMAND ${WL_SCANNER} 
+		"client-header"
+	"/usr/share/wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml"
+	"xdg-decoration-protocol.h"
+		WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/generated"
+		RESULT_VARIABLE WL_RESULT)	
+
+	if(NOT ${WL_RESULT} EQUAL 0)
+		message(FATAL_ERROR "Failed to generated wayland source for xdg decoration")
 	endif()
 endif()
 
