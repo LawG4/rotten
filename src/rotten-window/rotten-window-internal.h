@@ -21,6 +21,11 @@ typedef struct rotten_window_xcb {
 
 #ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
 #include "rotten-wayland.h"
+
+// TODO: Look into thread saftey of embedding these handles instead of giving the user a pointer
+extern rotten_library_wayland g_wl;
+extern rotten_library_wayland_ext g_wlext;
+
 #endif  //! wayland
 #endif  // !Linux
 

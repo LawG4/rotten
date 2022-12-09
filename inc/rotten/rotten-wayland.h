@@ -1,49 +1,53 @@
 /************************************************************************************************************
  * @file Rotten window wayland specific header
- * @brief Provides a method for dynamically loading wayland function pointers at runtime and the handles to
- * extract the native wayland handles for a rotten wayland window to allow users more fine grained control
- * over the window when they need it.
+ * @brief This library does not link to wayland, instead it provides a method for dynamically loading wayland
+ * function pointers at runtime. This allows users to querey for wayland support themselves and then fallback
+ * to another system if not present.
  * @copyright Rotten, MIT.
  * @authors Lawrence G,
  *
- * @note From what I can tell, xdg_wm_base requires the programmer to use wayland-scanner to generate source
- * and header files for this interface. libwayland-client.so does not have any xdg symbols. I don't want to
- * use those sources inside rotten window as it would force a direct link to wayland. until then we cheat with
- * wayland-egl.so
+ * @note A lot of wayland is implemented inside the protocol extensions, the symbols for these extensions are
+ * not located inside the libwayland-client library, so we cannot retrieve those symbols at runtime. Instead
+ * users have to build these from source which directly links to wayland, what we do is compile those
+ * extensions into a shared library which can be loaded at runtime as well. See rotten-wayland-ext
  ************************************************************************************************************/
 #ifndef __ROTTEN_EXTERNAL_WINDOW_WAYLAND_H__
 #define __ROTTEN_EXTERNAL_WINDOW_WAYLAND_H__ (1)
 #include <wayland-client-core.h>
 #include <wayland-client-protocol.h>
-#include <wayland-egl.h>
 #include "rotten-core.h"
 #include "rotten-dynamic-loading.h"
 #include "rotten-window.h"
+
+// Library not linked to, just fetch definitions
+#include "rotten-wayland-ext.h"
 ROTTEN_CPP_GUARD
 
-// The library struct is pretty massive, forward declare it and define it the bottom of the file
+/**
+ * @brief Dispatch table for all of the function pointers we need to load from libwayland-client at runtime
+ * @note This library is pretty big, so find the definition at the bottom of rotten-wayland.h
+ * When the user is using the rotten-wayland-ext library they only need to fetch one function pointer to fill
+ * this struct
+ */
 typedef struct rotten_library_wayland rotten_library_wayland;
-struct xdg_wm_base_listener;
-struct xdg_toplevel;
-struct xdg_wm_base;
 
-typedef struct rotten_window_wayland_extra {
+/**
+ * @brief All of the state used by rotten window for the core wayland protocol
+ */
+typedef struct rotten_window_wayland_core_state {
     struct wl_display* display;        // Pointer to the information about the current display
     struct wl_registry* registry;      // Proxy handle to the global resource manager
     struct wl_compositor* compositor;  // Proxy handle to the global compositor
-    struct wl_shm* shared_mem;
-    struct wl_shell* shell;       // Proxy handle to the shell system
-    struct xdg_wm_base* wm_base;  // Proxy handle to the window manager roles
-
-    struct wl_surface* surface;         // A rectangle which we can display contents to
-    struct xdg_surface* xdg_surface;    // A derivative object for the surface to comunicate with wm
-    struct xdg_toplevel* xdg_toplevel;  // wm top level roll
-} rotten_window_wayland_extra;
+    struct wl_shm* shared_mem;         //
+    struct wl_shell* shell;            // Proxy handle to the shell system
+} rotten_window_wayland_core_state;
 
 typedef struct rotten_window_wayland {
-    rotten_window_base base;             // Default information
-    rotten_window_wayland_extra extra;   // Wayland specific information for the window
-    struct rotten_library_wayland* way;  // handle to the wayland library functions
+    rotten_window_base base;                      // Default information for rotten window
+    rotten_window_wayland_core_state core_state;  // Wayland core protocol state
+    rotten_window_wayland_ext_state ext_state;    // Protocol extensions state
+    struct rotten_library_wayland* way;           // handle to the wayland library functions
+    struct rotten_library_wayland_ext* ext;       // handle to the protocol extensions built by rotten
 } rotten_window_wayland;
 
 //
@@ -72,9 +76,6 @@ rotten_success_code rotten_library_wayland_close(rotten_library_wayland* lib);
  */
 rotten_success_code rotten_wl_attach_interface_listeners(rotten_window_wayland* window);
 
-struct xdg_surface_listener;
-struct xdg_toplevel_listener;
-
 //
 // Wayland has quite a few static inline functions which use the default symbols. obviously we cant use them
 // as they will through a linking error, so provide the most scuffed wrapper ever. They will be
@@ -97,10 +98,8 @@ void rotten_wl_surface_commit(rotten_library_wayland* lib, struct wl_surface* wl
 
 typedef struct rotten_library_wayland {
     // Native linux handle for libwayland-client.so
-    rotten_dynamic_library* way_lib;
-
-    // Native linux handle for lib librotten-wayland-xdg.so
-    rotten_dynamic_library* ext_lib;
+    rotten_dynamic_library* lib;
+    rotten_wl_core_dispatch_load_fp lib_load;
 
     //
     // Function pointer table
@@ -120,34 +119,12 @@ typedef struct rotten_library_wayland {
                                             uint32_t flags, ...);
     int (*proxy_add_listener)(struct wl_proxy*, void (**implementation)(void), void* data);
 
-    // xdg function pointers
-    struct xdg_surface* (*xdg_wm_base_get_xdg_surface)(struct rotten_library_wayland* way,
-                                                       struct xdg_wm_base* xdg_wm_base,
-                                                       struct wl_surface* surface);
-    struct xdg_toplevel* (*xdg_surface_get_toplevel)(struct rotten_library_wayland* way,
-                                                     struct xdg_surface* surface);
-    void (*xdg_toplevel_set_title)(struct rotten_library_wayland* way, struct xdg_toplevel* xdg_toplevel,
-                                   const char* title);
-    void (*xdg_wm_base_pong)(rotten_library_wayland* way, struct xdg_wm_base* xdg_wm_base, uint32_t serial);
-    int (*xdg_wm_base_add_listener)(rotten_library_wayland* way, struct xdg_wm_base* xdg_wm_base,
-                                    const struct xdg_wm_base_listener* listener, void* data);
-    int (*xdg_surface_add_listener)(struct xdg_surface* xdg_surface,
-                                    const struct xdg_surface_listener* listener, void* data);
-    int (*xdg_toplevel_add_listener)(struct xdg_toplevel* xdg_toplevel,
-                                     const struct xdg_toplevel_listener* listener, void* data);
-
     // Pointer to a const structs which are exported const symbols from the wayland library, we instead
     // fetch pointers to them. Using the same method as function pointers
     struct wl_interface* registry_interface;
     struct wl_interface* compositor_interface;
     struct wl_interface* surface_interface;
     const struct wl_interface* shm_interface;
-    const struct wl_interface* xdg_wm_base_interface;
-    const struct wl_interface* xdg_surface_interface;
-    const struct wl_interface* xdg_toplevel_interface;
-    const struct xdg_wm_base_listener* xdg_wm_base_listener;
-    const struct xdg_surface_listener* xdg_surface_listener;
-    const struct xdg_toplevel_listener* xdg_toplevel_listener;
 
 } rotten_library_wayland;
 

@@ -44,33 +44,60 @@ rotten_success_code connect_test_xcb(rotten_window_connection* connection)
 
 #ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
 
-// Introduce the wayland specific code path for connection. remember that we're currently holding an internal
-// static library and giving each window a pointer to the library. TLDR this sucks
-static rotten_library_wayland s_way = {
-  .way_lib = NULL, .display_connect = NULL, .compositor_create_surface = NULL};
+extern rotten_library_wayland g_wl = {.lib = NULL};
+extern rotten_library_wayland_ext g_wlext = {.lib = NULL};
 
 rotten_success_code connect_test_wayland(rotten_window_connection* connection)
 {
-    // Is the static library handle null? if so attempt to open wayland client
-    if (s_way.way_lib == NULL) {
-        rotten_success_code err = rotten_library_wayland_load_min(&s_way);
-        if (err != e_rotten_success) return err;
+    // If there is no wayland client library present then we have no way to use wayland.
+    if (g_wl.lib == NULL) {
+        g_wl.lib = rotten_dynamic_library_open("libwayland-client.so");
+        if (g_wl.lib == NULL) {
+            rotten_log("Failed to open libwayland-client.so", e_rotten_log_warning);
+            return e_rotten_library_not_present
+        }
+
+        rotten_log("Opened libwayland-client.so", e_rotten_log_info);
     }
 
-    // Got this far, so we have the wayland connect function, perform a dummy connection to see if we can find
-    // a valid wayland compositor.
-    rotten_success_code err = rotten_library_wayland_valid_session(&s_way);
-    if (err != e_rotten_success) return err;
+    // The next library we rely on is the dynamic rotten-wayland-ext, now although you can do wayland without
+    // this helper library, the core protocol doesn't go much beyond a blank square you can memcpy pixel data
+    // to, we want more features and so need ext, so we'll drop out of wayland support if there is no
+    // waylandext
+    if (g_wlext.lib == NULL) {
+        // TODO: This is a local path, if launching from a different working directory, you're fucked
+        g_wlext.lib = rotten_dynamic_library_open("./librotten-wayland-ext.so");
+        if (g_wlext.lib == NULL) {
+            rotten_log("Failed to load librotten-wayland-ext.so", e_rotten_log_warning);
+            return e_rotten_library_not_present;
+        }
 
-    // We have the ability to connect to a wayland compositor, so it is now worth loading the rest of the
-    // function pointers for wayland. We use the create window function as a test as we only load that
-    // function pointer once wayland compositor is found
+        rotten_log("Opened librotten-wayland-ext.so", e_rotten_log_info);
 
-    if (s_way.compositor_create_surface == NULL) {
-        err = rotten_library_wayland_load_full(&s_way);
-        if (err != e_rotten_success) return err;
+        // Fetch the loading helper functions from the extension library
+        g_wl.lib_load = rotten_dynamic_library_fetch(g_wlext.lib, "rotten_wl_core_dispatch_load");
+        g_wlext.lib_load = rotten_dynamic_library_fetch(g_wlext.lib, "rotten_wl_ext_dispatch_load");
+
+        if (g_wl.lib_load == NULL || g_wlext.lib_load == NULL) {
+            rotten_log("Failed to fetch required function pointers from wayland libraries",
+                       e_rotten_log_warning);
+            return e_rotten_feature_not_present;
+        }
+
+        // Use these function pointers to fill their own dispatch tables
+        g_wl.lib_load(&gl_wl);
+        g_wlext.lib_load(&g_wlext);
     }
-    rotten_log("Successfully opened connection to wayland server", e_rotten_log_info);
+
+    // Use those dynamically loaded functions to test if it's possible for us to connect to the display
+    struct wl_display* temp_display = g_wl.display_connect(NULL);
+    if (temp_display == NULL) {
+        rotten_log("Failed to connect to a wayland display", e_rotten_log_warning);
+        return e_rotten_feature_not_present;
+    }
+
+    g_wl.display_disconnect(temp_display);
+    rotten_log("Successfully connected to wayland display", e_rotten_log_info);
     return e_rotten_success;
 }
 #endif  //! Wayland
