@@ -50,17 +50,14 @@ typedef struct rotten_window_wayland {
     struct rotten_library_wayland_ext* ext;       // handle to the protocol extensions built by rotten
 } rotten_window_wayland;
 
-//
-// Library runtime loaders
-//
-
-rotten_success_code rotten_library_wayland_load_min(rotten_library_wayland* lib);
-
-rotten_success_code rotten_library_wayland_valid_session(rotten_library_wayland* lib);
-
-rotten_success_code rotten_library_wayland_load_full(rotten_library_wayland* lib);
-
-rotten_success_code rotten_library_wayland_close(rotten_library_wayland* lib);
+/**
+ * @brief Load the functions from the libwayland-client.so automastically
+ * @param lib Pointer to the dispatch table to hold all the function pointers
+ * @returns Success code
+ * @note I don't think we can fetch the static inline functions for you, instead it's probably easier to use
+ * rotten_library_wayland_ext to load all of the wayland functions including the protocol extensions
+ */
+rotten_success_code rotten_library_wayland_load(rotten_library_wayland* lib);
 
 //
 // Helper functions for working within rotten wayland
