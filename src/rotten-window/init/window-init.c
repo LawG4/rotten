@@ -125,10 +125,9 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
     // Connect the window handle to the wayland library handle and connect to the display
     window->way = (rotten_library_wayland*)connection->backend_handle;
     rotten_library_wayland* way = window->way;
-    rotten_window_wayland_extra* extra = &window->extra;
 
-    extra->display = way->display_connect(NULL);
-    if (extra->display == NULL) {
+    window->core_state.display = way->display_connect(NULL);
+    if (window->core_state.display == NULL) {
         rotten_log_debug(
           "Somehow couldn't connect to wayland display after previously verifying that it works",
           e_rotten_log_error);
@@ -141,32 +140,36 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
     //
     // TODO: Can this be null? error handling. There was a typo in this before but it still gave me a pointer,
     // but the resulting device has no events and so hanged on the dispatch
-    extra->registry = rotten_wl_display_get_registry(way, extra->display);
+    window->core_state.registry = rotten_wl_display_get_registry(way, window->core_state.display);
     rotten_success_code err = rotten_wl_attach_interface_listeners(window);
     if (err != e_rotten_success) return err;
 
     // Perform a thread blocking round trip to get the notifications for all currently attached devices
-    way->display_dispatch(extra->display);
-    way->display_roundtrip(extra->display);
-    if (extra->compositor == NULL || extra->wm_base == NULL) {
+    way->display_dispatch(window->core_state.display);
+    way->display_roundtrip(window->core_state.display);
+    if (window->core_state.compositor == NULL || window->ext_state.wm_base == NULL) {
         rotten_log("Failed to fetch proxy handle for a required interface", e_rotten_log_error);
         return e_rotten_unclassified_error;
     }
 
     // Now that we have a proxy handle to the global wayland compositor, create a surface which is the
     // rectangular area of pixels which we actually have control over
-    extra->surface = rotten_wl_compositor_create_surface(way, extra->compositor);
-    if (extra->surface == NULL) {
+    window->core_state.surface = rotten_wl_compositor_create_surface(way, window->core_state.compositor);
+    if (window->core_state.surface == NULL) {
         rotten_log("Failed to fetch a proxy to required interface", e_rotten_log_error);
         return e_rotten_unclassified_error;
     }
 
     // From the surface now derive the xdg structs and attach a listener to the surface which will allocate a
     // buffer large enough to contain all of the pixels in the window
-    extra->xdg_surface = way->xdg_wm_base_get_xdg_surface(way, extra->wm_base, extra->surface);
-    way->xdg_surface_add_listener(extra->xdg_surface, way->xdg_surface_listener, window);
-    extra->xdg_toplevel = way->xdg_surface_get_toplevel(way, extra->xdg_surface);
-    way->xdg_toplevel_add_listener(extra->xdg_toplevel, way->xdg_toplevel_listener, window);
+    window->ext_state.xdg_surface =
+      window->ext->xdg_wm_base_get_xdg_surface(way, window->ext_state.wm_base, window->core_state.surface);
+    window->ext->xdg_surface_add_listener(window->ext_state.xdg_surface, window->ext->xdg_surface_listener,
+                                          window);
+    window->ext_state.xdg_toplevel =
+      window->ext->xdg_surface_get_toplevel(way, window->ext_state.xdg_surface);
+    window->ext->xdg_toplevel_add_listener(window->ext_state.xdg_toplevel, window->ext->xdg_toplevel_listener,
+                                           window);
 
     rotten_log("Created wayland window", e_rotten_log_info);
     return e_rotten_success;

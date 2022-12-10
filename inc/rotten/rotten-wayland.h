@@ -35,11 +35,14 @@ typedef struct rotten_library_wayland rotten_library_wayland;
  * @brief All of the state used by rotten window for the core wayland protocol
  */
 typedef struct rotten_window_wayland_core_state {
-    struct wl_display* display;        // Pointer to the information about the current display
+    // Proxy handles
     struct wl_registry* registry;      // Proxy handle to the global resource manager
     struct wl_compositor* compositor;  // Proxy handle to the global compositor
-    struct wl_shm* shared_mem;         //
+    struct wl_shm* shm;                // Proxy handle to the shared memory interface
     struct wl_shell* shell;            // Proxy handle to the shell system
+
+    struct wl_display* display;  // Pointer to the information about the current display
+    struct wl_surface* surface;
 } rotten_window_wayland_core_state;
 
 typedef struct rotten_window_wayland {

@@ -44,8 +44,8 @@ rotten_success_code connect_test_xcb(rotten_window_connection* connection)
 
 #ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
 
-extern rotten_library_wayland g_wl = {.lib = NULL};
-extern rotten_library_wayland_ext g_wlext = {.lib = NULL};
+rotten_library_wayland g_wl = {.lib = NULL};
+rotten_library_wayland_ext g_wlext = {.lib = NULL};
 
 rotten_success_code connect_test_wayland(rotten_window_connection* connection)
 {
@@ -54,7 +54,7 @@ rotten_success_code connect_test_wayland(rotten_window_connection* connection)
         g_wl.lib = rotten_dynamic_library_open("libwayland-client.so");
         if (g_wl.lib == NULL) {
             rotten_log("Failed to open libwayland-client.so", e_rotten_log_warning);
-            return e_rotten_library_not_present
+            return e_rotten_library_not_present;
         }
 
         rotten_log("Opened libwayland-client.so", e_rotten_log_info);
@@ -85,7 +85,7 @@ rotten_success_code connect_test_wayland(rotten_window_connection* connection)
         }
 
         // Use these function pointers to fill their own dispatch tables
-        g_wl.lib_load(&gl_wl);
+        g_wl.lib_load(&g_wl);
         g_wlext.lib_load(&g_wlext);
     }
 
