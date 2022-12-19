@@ -121,9 +121,9 @@ typedef struct rotten_library_wayland {
 
     // Pointer to a const structs which are exported const symbols from the wayland library, we instead
     // fetch pointers to them. Using the same method as function pointers
-    struct wl_interface* registry_interface;
-    struct wl_interface* compositor_interface;
-    struct wl_interface* surface_interface;
+    const struct wl_interface* registry_interface;
+    const struct wl_interface* compositor_interface;
+    const struct wl_interface* surface_interface;
     const struct wl_interface* shm_interface;
 
 } rotten_library_wayland;
