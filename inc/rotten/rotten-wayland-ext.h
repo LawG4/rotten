@@ -53,6 +53,7 @@ typedef struct rotten_window_wayland_ext_state rotten_window_wayland_ext_state;
  */
 void rotten_wl_core_dispatch_load(rotten_library_wayland* lib);
 typedef void (*rotten_wl_core_dispatch_load_fp)(rotten_library_wayland* lib);
+
 /**
  * @brief Fills in the rotten-library-wayland-ext dispatch table in a similar way as to how the core protocol
  * is loaded
@@ -109,13 +110,10 @@ typedef struct rotten_library_wayland_ext {
     const struct xdg_toplevel_listener* xdg_toplevel_listener;
 
     // xdg function pointers
-    struct xdg_surface* (*xdg_wm_base_get_xdg_surface)(struct rotten_library_wayland* way,
-                                                       struct xdg_wm_base* xdg_wm_base,
+    struct xdg_surface* (*xdg_wm_base_get_xdg_surface)(struct xdg_wm_base* xdg_wm_base,
                                                        struct wl_surface* surface);
-    struct xdg_toplevel* (*xdg_surface_get_toplevel)(struct rotten_library_wayland* way,
-                                                     struct xdg_surface* surface);
-    void (*xdg_toplevel_set_title)(struct rotten_library_wayland* way, struct xdg_toplevel* xdg_toplevel,
-                                   const char* title);
+    struct xdg_toplevel* (*xdg_surface_get_toplevel)(struct xdg_surface* surface);
+    void (*xdg_toplevel_set_title)(struct xdg_toplevel* xdg_toplevel, const char* title);
     void (*xdg_wm_base_pong)(rotten_library_wayland* way, struct xdg_wm_base* xdg_wm_base, uint32_t serial);
     int (*xdg_wm_base_add_listener)(rotten_library_wayland* way, struct xdg_wm_base* xdg_wm_base,
                                     const struct xdg_wm_base_listener* listener, void* data);

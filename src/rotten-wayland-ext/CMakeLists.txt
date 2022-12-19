@@ -65,11 +65,11 @@ if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/generated/xdg-shell-protocol.c)
 	RESULT_VARIABLE WL_RESULT)
 
 	execute_process(COMMAND ${WL_SCANNER} 
-		"client-header"
+	"client-header"
 	"/usr/share/wayland-protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml"
 	"xdg-decoration-protocol.h"
-		WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/generated"
-		RESULT_VARIABLE WL_RESULT)	
+	WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/generated"
+	RESULT_VARIABLE WL_RESULT)
 
 	if(NOT ${WL_RESULT} EQUAL 0)
 		message(FATAL_ERROR "Failed to generated wayland source for xdg decoration")
@@ -80,12 +80,17 @@ endif()
 add_library(rotten-wayland-ext SHARED 
 	generated/xdg-shell-protocol.c
 	generated/xdg-shell-client-protocol.h
-	
+	generated/xdg-decoration-protocol.c 
+	generated/xdg-decoration-protocol.h
+
+	dispatch/core.c 
+	dispatch/ext.c 
+
 	xdg/filler.c
 	xdg/xdg-interface.c
-	xdg/dispatch.c
 	xdg/listener.c
-	
+	xdg/decoration.c
+
 	buffers/shm.c)
 
 # Add the rotten-wayland-xdg header file to publish the functions
