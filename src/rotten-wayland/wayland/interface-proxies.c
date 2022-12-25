@@ -15,21 +15,21 @@ static void s_notify_registry(void* data, struct wl_registry* registry, uint32_t
 
     // Create the compositor proxy
     if (!strcmp(interface, "wl_compositor")) {
-        window->extra.compositor = rotten_wl_registry_bind(window->way, window->extra.registry, id,
-                                                           window->way->compositor_interface, 1);
+        window->core_state.compositor = rotten_wl_registry_bind(window->way, window->core_state.registry, id,
+                                                                window->way->compositor_interface, 1);
         return;
     } else if (!strcmp(interface, "wl_shm")) {
         // Get the proxy for shared mememory interface
-        window->extra.shared_mem =
-          rotten_wl_registry_bind(window->way, window->extra.registry, id, window->way->shm_interface, 1);
+        window->core_state.shm = rotten_wl_registry_bind(window->way, window->core_state.registry, id,
+                                                         window->way->shm_interface, 1);
         return;
     } else if (!strcmp(interface, "xdg_wm_base")) {
         // When we want to get a proxy for the window handle, we also want to attach the heart beat ping
         // ponging function, so that the window manager knows we're alive
-        window->extra.wm_base = rotten_wl_registry_bind(window->way, window->extra.registry, id,
-                                                        window->way->xdg_wm_base_interface, 1);
-        window->way->xdg_wm_base_add_listener(window->way, window->extra.wm_base,
-                                              window->way->xdg_wm_base_listener, window);
+        window->ext_state.wm_base = rotten_wl_registry_bind(window->way, window->core_state.registry, id,
+                                                            window->ext->xdg_wm_base_interface, 1);
+        window->ext->xdg_wm_base_add_listener(window->ext_state.wm_base, window->ext->xdg_wm_base_listener,
+                                              window);
         return;
     }
 }
@@ -47,7 +47,8 @@ rotten_success_code rotten_wl_attach_interface_listeners(rotten_window_wayland* 
     // Since this registry proxy is unique to the window, attach the static function pointers called to to
     // notify us, give it the pointer to the window itself, the statatic function pointers above can then
     // recieve that window handle as a parameter
-    int err = rotten_wl_registry_add_listener(window->way, window->extra.registry, &s_way_listener, window);
+    int err =
+      rotten_wl_registry_add_listener(window->way, window->core_state.registry, &s_way_listener, window);
     if (err != 0) {
         return e_rotten_unclassified_error;
     }

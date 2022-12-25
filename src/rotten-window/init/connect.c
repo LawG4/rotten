@@ -123,7 +123,7 @@ rotten_success_code rotten_window_connect(rotten_window_connection* connection)
 
         // by default prefer wayland
         connection->selected_backend = e_rotten_window_wayland;
-        connection->backend_handle = &s_way;
+        // connection->backend_handle = &s_way;
     }
 #endif  // ! Wayland connect
 
@@ -146,8 +146,7 @@ rotten_success_code rotten_window_connect(rotten_window_connection* connection)
 #endif  // ! End of OS specific
 
     // Check that at least one of the window connections was enabled
-    if (connection->supported_window_backends == 0 || connection->backend_handle == NULL ||
-        connection->selected_backend == e_rotten_window_none) {
+    if (connection->supported_window_backends == 0 || connection->selected_backend == e_rotten_window_none) {
         rotten_log("No supported window backend were found", e_rotten_log_error);
         return e_rotten_library_not_present;
     }

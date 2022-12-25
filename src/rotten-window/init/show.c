@@ -23,7 +23,7 @@ rotten_success_code rotten_window_show_wayland(rotten_window_wayland* window)
 {
     // Commit changes
     // TODO: Handle errors somehow?
-    rotten_wl_surface_commit(window->way, window->extra.surface);
+    rotten_wl_surface_commit(window->way, window->core_state.surface);
     return e_rotten_success;
 }
 #endif  // !wayland

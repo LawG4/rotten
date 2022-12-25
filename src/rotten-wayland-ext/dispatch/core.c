@@ -25,4 +25,10 @@ void rotten_wl_core_dispatch_load(rotten_library_wayland* lib)
     lib->display_disconnect = wl_display_disconnect;
     lib->display_roundtrip = wl_display_roundtrip;
     lib->display_dispatch = wl_display_dispatch;
+
+    // Surface
+    lib->surface_interface = &wl_surface_interface;
+
+    // shared memory function pointers
+    lib->shm_interface = &wl_shm_interface;
 }

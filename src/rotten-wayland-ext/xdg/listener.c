@@ -29,7 +29,7 @@ static int rotten_wl_xdg_wm_base_add_listener(rotten_library_wayland *way, struc
 static void s_xdg_wm_base_ping(void *data, struct xdg_wm_base *xdg_wm_base, uint32_t serial)
 {
     rotten_window_wayland *window = (rotten_window_wayland *)data;
-    window->way->xdg_wm_base_pong(window->way, xdg_wm_base, serial);
+    window->ext->xdg_wm_base_pong(xdg_wm_base, serial);
 }
 
 // Struct to contain the ping pong.
@@ -59,7 +59,7 @@ static void s_xdg_surface_listener_configure(void *data, struct xdg_surface *sur
     size_t line_stride = way->base.width * 4;  // The format we select uses 4 bytes per pixel
     size_t buff_size = way->base.height * line_stride;
 
-    rotten_wl_shm_pool temp_pool = rotten_wl_shm_create_pool(way->extra.shared_mem, buff_size);
+    rotten_wl_shm_pool temp_pool = rotten_wl_shm_create_pool(way->core_state.shm, buff_size);
     struct wl_buffer *temp_buff = wl_shm_pool_create_buffer(
       temp_pool.pool, 0, way->base.width, way->base.height, line_stride, WL_SHM_FORMAT_XRGB8888);
     rotten_wl_shm_destroy_pool(&temp_pool);
@@ -68,8 +68,8 @@ static void s_xdg_surface_listener_configure(void *data, struct xdg_surface *sur
     // listener, which the compositor will run when it's done with the buffer
 
     // Attach this buffer to the surface  and flush changes out to hardware.
-    wl_surface_attach(way->extra.surface, temp_buff, 0, 0);
-    wl_surface_commit(way->extra.surface);
+    wl_surface_attach(way->core_state.surface, temp_buff, 0, 0);
+    wl_surface_commit(way->core_state.surface);
 }
 
 static struct xdg_surface_listener s_xdg_surface_listener = {.configure = &s_xdg_surface_listener_configure};
@@ -91,7 +91,7 @@ static void s_xdg_toplevel_handle_configure(void *data, struct xdg_toplevel *xdg
         window->base.width = w;
         window->base.height = h;
 
-        wl_surface_commit(window->extra.surface);
+        wl_surface_commit(window->core_state.surface);
     }
 }
 
@@ -111,12 +111,12 @@ struct xdg_toplevel_listener s_xdg_toplevel_listener = {
 //
 
 // Finally a function which attaches this static listener to the window
-void rotten_wl_xdg_attach_listener_pointers(rotten_library_wayland *lib)
+void rotten_wl_xdg_attach_listener_pointers(rotten_library_wayland_ext *lib)
 {
     // For listening to wm_base stuff
-    lib->xdg_wm_base_pong = &rotten_wl_xdg_wm_base_pong;
+    lib->xdg_wm_base_pong = xdg_wm_base_pong;
     lib->xdg_wm_base_listener = &s_xdg_wm_base_listener;
-    lib->xdg_wm_base_add_listener = &rotten_wl_xdg_wm_base_add_listener;
+    lib->xdg_wm_base_add_listener = xdg_wm_base_add_listener;
 
     // For listening to surface configurations
     lib->xdg_surface_listener = &s_xdg_surface_listener;

@@ -1,0 +1,1 @@
+#include "../generated/xdg-decoration-protocol.h"

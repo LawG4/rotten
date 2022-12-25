@@ -114,8 +114,8 @@ typedef struct rotten_library_wayland_ext {
                                                        struct wl_surface* surface);
     struct xdg_toplevel* (*xdg_surface_get_toplevel)(struct xdg_surface* surface);
     void (*xdg_toplevel_set_title)(struct xdg_toplevel* xdg_toplevel, const char* title);
-    void (*xdg_wm_base_pong)(rotten_library_wayland* way, struct xdg_wm_base* xdg_wm_base, uint32_t serial);
-    int (*xdg_wm_base_add_listener)(rotten_library_wayland* way, struct xdg_wm_base* xdg_wm_base,
+    void (*xdg_wm_base_pong)(struct xdg_wm_base* xdg_wm_base, uint32_t serial);
+    int (*xdg_wm_base_add_listener)(struct xdg_wm_base* xdg_wm_base,
                                     const struct xdg_wm_base_listener* listener, void* data);
     int (*xdg_surface_add_listener)(struct xdg_surface* xdg_surface,
                                     const struct xdg_surface_listener* listener, void* data);

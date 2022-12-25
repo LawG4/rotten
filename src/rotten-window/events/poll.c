@@ -88,7 +88,7 @@ void rotten_window_poll_events_wayland(rotten_window_wayland* window)
 {
     // TODO: TThere's a notice about using the dispatch pending instead. It seems doing this dispatch can
     // actually cause other events to happen or something? I'm honestly not sure
-    window->way->display_dispatch(window->extra.display);
+    window->way->display_dispatch(window->core_state.display);
 }
 #endif  // !Wayland
 #endif  // ! linux

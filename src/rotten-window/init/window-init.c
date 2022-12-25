@@ -123,7 +123,8 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
                                                rotten_window_definition* definition)
 {
     // Connect the window handle to the wayland library handle and connect to the display
-    window->way = (rotten_library_wayland*)connection->backend_handle;
+    window->way = &g_wl;
+    window->ext = &g_wlext;
     rotten_library_wayland* way = window->way;
 
     window->core_state.display = way->display_connect(NULL);
@@ -163,11 +164,10 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
     // From the surface now derive the xdg structs and attach a listener to the surface which will allocate a
     // buffer large enough to contain all of the pixels in the window
     window->ext_state.xdg_surface =
-      window->ext->xdg_wm_base_get_xdg_surface(way, window->ext_state.wm_base, window->core_state.surface);
+      window->ext->xdg_wm_base_get_xdg_surface(window->ext_state.wm_base, window->core_state.surface);
     window->ext->xdg_surface_add_listener(window->ext_state.xdg_surface, window->ext->xdg_surface_listener,
                                           window);
-    window->ext_state.xdg_toplevel =
-      window->ext->xdg_surface_get_toplevel(way, window->ext_state.xdg_surface);
+    window->ext_state.xdg_toplevel = window->ext->xdg_surface_get_toplevel(window->ext_state.xdg_surface);
     window->ext->xdg_toplevel_add_listener(window->ext_state.xdg_toplevel, window->ext->xdg_toplevel_listener,
                                            window);
 

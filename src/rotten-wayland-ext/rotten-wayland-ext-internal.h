@@ -8,4 +8,9 @@
 #include "generated/xdg-decoration-protocol.h"
 #include "generated/xdg-shell-client-protocol.h"
 
+/**
+ * @brief Attaches all of the function pointers used
+ */
+void rotten_wl_xdg_attach_listener_pointers(rotten_library_wayland_ext *lib);
+
 #endif
