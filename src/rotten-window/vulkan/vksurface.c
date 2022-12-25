@@ -83,6 +83,37 @@ rotten_success_code vk_surface_create_xcb(rotten_window_xcb* window, const VkIns
     return e_rotten_success;
 }
 #endif  // xcb
+
+#ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
+rotten_success_code vk_surface_create_wayland(rotten_window_wayland* window, const VkInstance* instance,
+                                              VkSurfaceKHR* surface)
+{
+    // Remember that the instance used to create the surface can change between calls so we can't cache the
+    // function pointer for the create surface
+    PFN_vkCreateWaylandSurfaceKHR create_wayland_surface =
+      (PFN_vkCreateWaylandSurfaceKHR)s_vk_proc(*instance, "vkCreateWaylandSurfaceKHR");
+
+    if (create_wayland_surface == NULL) {
+        return e_rotten_feature_not_present;
+    }
+
+    // Create a Wayland create info for the surface
+    VkWaylandSurfaceCreateInfoKHR info = {.sType = VK_STRUCTURE_TYPE_WAYLAND_SURFACE_CREATE_INFO_KHR,
+                                          .display = window->core_state.display,
+                                          .surface = window->core_state.surface,
+                                          .flags = 0,
+                                          .pNext = NULL};
+    VkResult err = create_wayland_surface(*instance, &info, NULL, surface);
+
+    // Check the return type of that Vulkan function
+    if (err != VK_SUCCESS) {
+        rotten_log("Failed when attempting to create a Vksurface with vkCreateWaylandSurfaceKHR",
+                   e_rotten_log_error);
+        return e_rotten_feature_not_present;
+    }
+    return e_rotten_success;
+}
+#endif  // wayland
 #endif  // linux
 
 rotten_success_code rotten_window_vk_surface_create(rotten_window* window, const void* instance,
@@ -121,7 +152,8 @@ rotten_success_code rotten_window_vk_surface_create(rotten_window* window, const
         return vk_surface_create_xcb((rotten_window_xcb*)window, instance, surface);
 #endif  // xcb
 #ifndef ROTTEN_WINDOW_EXCLUDE_WAYLAND
-    if (base->backend == e_rotten_window_wayland) return e_rotten_unimplemented;
+    if (base->backend == e_rotten_window_wayland)
+        return vk_surface_create_wayland((rotten_window_wayland*)window, instance, surface);
 #endif  // wayland
 #endif  // linux
 
