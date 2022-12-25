@@ -26,6 +26,9 @@ message("Rotten monorepo build system")
 message("Target : ${CMAKE_SYSTEM_NAME} ${CMAKE_SYSTEM_PROCESSOR}")
 message("Host   : ${CMAKE_HOST_SYSTEM_NAME} ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 
+# Enable the compile commands.json to be automatically generated
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "" FORCE)
+
 # Allow the users to configure which rotten projects are built
 option(ROTTEN_PROJECT_EXAMPLES   "Build the rotten examples for all projecsts" ON)
 option(ROTTEN_PROJECT_GFX        "Build the rotten graphics abstraction layer" ON)
@@ -33,9 +36,17 @@ option(ROTTEN_PROJECT_RETRO      "Build the rotten retro targets" ON)
 option(ROTTEN_PROJECT_VK_BOTTOM  "Build the rotten vulkan low level helpers" ON)
 option(ROTTEN_PROJECT_VK_RUNTIME "Build the rotten vulkan runtime loader" ON)
 option(ROTTEN_PROJECT_VK_TOP     "Build the rotten vulkan high level helpers" ON)
+option(ROTTEN_PROJECT_WINDOW   "Build the rotten windowing system abstraction" ON)
 
-# Enable the compile commands.json to be automatically generated
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "" FORCE)
+# Set the options for linux only libraries. Each library also has an ifdef linux guard
+# but better to be safe than sorry!
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+	set(ROTTEN_LINUX_ONLY_LIBS ON)
+else()
+	set(ROTTEN_LINUX_ONLY_LIBS OFF)
+endif()
+option(ROTTEN_PROJECT_XCB "Build linux XCB dynamic loader" ${ROTTEN_LINUX_ONLY_LIBS})
+option(ROTTEN_PROJECT_WAYLAND "Build linux Wayland dynamic loader" ${ROTTEN_LINUX_ONLY_LIBS})
 
 # Jump into the source directory to add in all of the different subprojects
-add_subdirectory(src)
+add_subdirectory(src) 

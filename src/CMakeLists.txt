@@ -14,7 +14,8 @@ set(rotten_projects
 	rotten-retro
 	rotten-vk-bottom
 	rotten-vk-runtime
-	rotten-vk-top)
+	rotten-vk-top
+	rotten-window)
 
 foreach(project ${rotten_projects})
 	add_subdirectory(${project})
