@@ -82,11 +82,11 @@ int main()
     printf("Created the Vulkan device!\n");
 
     // Now fetch the swapchain and the associated image views
+    VkExtent2D swap_extent = {.width = window_definition.width, .height = window_definition.height};
     VkSwapchainKHR swap;
     VkImage* swap_images;
     VkImageView* swap_views;
     uint32_t swap_length;
-    VkExtent2D swap_extent;
 
     if (vk_create_swapchain(device, physical, surface, &swap, &swap_length, &swap_extent, &swap_images,
                             &swap_views) != VK_SUCCESS) {
@@ -319,14 +319,17 @@ VkResult vk_create_swapchain(VkDevice device, VkPhysicalDevice physical, VkSurfa
     VkSurfaceFormatKHR format;
     vkGetPhysicalDeviceSurfaceFormatsKHR(physical, surface, &format_count, &format);
 
-    // Don't bother asking the windowing system for the swapchain size, instead remember that most of the time
-    // the capabilities will upperbound on the actual size of the surface anyway. Aim for 3 images in the
-    // swapchain, but once again upperbound by the surface capabilities
+    // Get the swapchain length, this is how many per swapchain resources we'll need to create.
     VkSurfaceCapabilitiesKHR cap;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical, surface, &cap);
-    *extent = cap.maxImageExtent;
-    // TODO: On my devce these look the wrong way round cap.min = 3 cap.max = 0????
-    *swap_length = cap.minImageCount <= 3 ? cap.minImageCount : 3;
+    *swap_length = cap.minImageCount;
+
+    // Bound the swapchain's dimensions by the maximum supported, we rely on the caller to fill in the extent
+    // with the suggested size of the window, for example the title bar might shrink the framebuffer
+    if (extent->width < cap.minImageExtent.width) extent->width = cap.minImageExtent.width;
+    if (extent->height < cap.minImageExtent.height) extent->height = cap.minImageExtent.height;
+    if (extent->width > cap.maxImageExtent.width) extent->width = cap.maxImageExtent.width;
+    if (extent->height > cap.maxImageExtent.height) extent->height = cap.maxImageExtent.height;
 
     // TODO pass the actual queue family index
     uint32_t queue_family = 0;
@@ -350,7 +353,8 @@ VkResult vk_create_swapchain(VkDevice device, VkPhysicalDevice physical, VkSurfa
                                           .flags = 0,
                                           .pNext = NULL};
 
-    if (vkCreateSwapchainKHR(device, &swap_info, NULL, swap) != VK_SUCCESS) {
+    VkResult err = vkCreateSwapchainKHR(device, &swap_info, NULL, swap);
+    if (err != VK_SUCCESS) {
         printf("Unable to create a swapchain\n");
         return -1;
     }
