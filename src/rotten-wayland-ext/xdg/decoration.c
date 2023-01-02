@@ -1,1 +1,1 @@
-#include "../generated/xdg-decoration-protocol.h"
+#include "../rotten-wayland-ext-internal.h"

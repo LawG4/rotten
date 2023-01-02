@@ -171,6 +171,14 @@ rotten_success_code rotten_window_init_wayland(rotten_window_wayland* window,
     window->ext->xdg_toplevel_add_listener(window->ext_state.xdg_toplevel, window->ext->xdg_toplevel_listener,
                                            window);
 
+    // Now we want to see if we can create a window decoration communication with the server to negotiate how
+    // we look. This is very experimental and not all compositors will support it
+    window->ext_state.zxdg_decoration_toplevel = window->ext->zxdg_decoration_manager_get_toplevel_decoration(
+      window->ext_state.zxdg_decoration_manger, window->ext_state.xdg_toplevel);
+    if (window->ext_state.zxdg_decoration_toplevel == NULL) {
+        rotten_log("Now server communication for decorations", e_rotten_log_warning);
+    }
+
     rotten_log("Created wayland window", e_rotten_log_info);
     return e_rotten_success;
 }

@@ -24,4 +24,13 @@ void rotten_wl_ext_dispatch_load(rotten_library_wayland_ext* lib)
     lib->xdg_toplevel_set_title = xdg_toplevel_set_title;
     // Listeners
     rotten_wl_xdg_attach_listener_pointers(lib);
+
+    //
+    // ZXDG
+    //
+
+    // Decoration manager
+    lib->zxdg_decoration_manager_interface = &zxdg_decoration_manager_v1_interface;
+    lib->zxdg_decoration_manager_get_toplevel_decoration = zxdg_decoration_manager_v1_get_toplevel_decoration;
+    // Top level decorationer
 }
