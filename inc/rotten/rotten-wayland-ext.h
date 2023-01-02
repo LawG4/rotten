@@ -94,6 +94,10 @@ typedef struct rotten_window_wayland_ext_state {
     struct wl_surface* surface;         // A rectangle which we can display contents to
     struct xdg_surface* xdg_surface;    // A derivative object for the surface to comunicate with wm
     struct xdg_toplevel* xdg_toplevel;  // wm top level roll
+
+    // zxdg
+    struct zxdg_decoration_manager_v1* zxdg_decoration_manger;     // Proxy for allowing server to decorarte
+    struct zxdg_toplevel_decoration_v1* zxdg_decoration_toplevel;  // Decorate an xdg toplevel
 } rotten_window_wayland_ext_state;
 
 typedef struct rotten_library_wayland_ext {
@@ -121,6 +125,14 @@ typedef struct rotten_library_wayland_ext {
                                     const struct xdg_surface_listener* listener, void* data);
     int (*xdg_toplevel_add_listener)(struct xdg_toplevel* xdg_toplevel,
                                      const struct xdg_toplevel_listener* listener, void* data);
+
+    // zxdg decoration manager
+    const struct wl_interface* zxdg_decoration_manager_interface;
+    struct zxdg_toplevel_decoration_v1* (*zxdg_decoration_manager_get_toplevel_decoration)(
+      struct zxdg_decoration_manager_v1* zxdg_decoration_manager_v1, struct xdg_toplevel* toplevel);
+
+    // zxdg decoration toplevel
+
 } rotten_library_wayland_ext;
 
 ROTTEN_CPP_GUARD_END

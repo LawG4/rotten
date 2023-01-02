@@ -31,6 +31,12 @@ static void s_notify_registry(void* data, struct wl_registry* registry, uint32_t
         window->ext->xdg_wm_base_add_listener(window->ext_state.wm_base, window->ext->xdg_wm_base_listener,
                                               window);
         return;
+    } else if (!strcmp(interface, "zxdg_decoration_manager_v1")) {
+        // Window decoration manager, allows the server to declare it's decorations to the client to keep
+        // themes consistent. The feature is currently very experimental, so it isn't required and also may
+        // well change
+        window->ext_state.zxdg_decoration_manger = rotten_wl_registry_bind(
+          window->way, window->core_state.registry, id, window->ext->zxdg_decoration_manager_interface, 1);
     }
 }
 
